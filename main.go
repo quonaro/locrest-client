@@ -27,6 +27,7 @@ import (
 var (
 	serverURL  = flag.String("server", "", "chisel server URL (wss://host/tunnel)")
 	localPort  = flag.Int("port", 0, "local port to forward")
+	targetHost = flag.String("host", "localhost", "target host to forward to")
 	subdomain  = flag.String("subdomain", "", "requested subdomain")
 	privKeyHex = flag.String("key", "", "hex-encoded ed25519 private key")
 	debug      = flag.Bool("debug", false, "enable verbose debug output")
@@ -163,7 +164,7 @@ func main() {
 	}
 
 	if !*debug {
-		printBanner(tunnelURL(*serverURL, *subdomain), *localPort)
+		printBanner(tunnelURL(*serverURL, *subdomain), *targetHost, *localPort)
 	}
 
 	if err := c.Wait(); err != nil {
@@ -180,7 +181,7 @@ func fatal(format string, v ...interface{}) {
 	os.Exit(1)
 }
 
-func printBanner(url string, localPort int) {
+func printBanner(url, targetHost string, localPort int) {
 	const (
 		grn = "\x1b[1;32m"
 		cyn = "\x1b[1;36m"
@@ -190,7 +191,7 @@ func printBanner(url string, localPort int) {
 	fmt.Println()
 	fmt.Printf("  %s🟢  LOCREST TUNNEL ACTIVE%s\n", grn, rst)
 	fmt.Printf("  %s🔗  URL:    %s%s%s\n", dim, cyn, url, rst)
-	fmt.Printf("  %s🏠  Local:  %slocalhost:%d%s\n", dim, cyn, localPort, rst)
+	fmt.Printf("  %s🏠  Source: %s%s:%d%s\n", dim, cyn, targetHost, localPort, rst)
 	fmt.Printf("  %s⛔  Press Ctrl+C to stop%s\n", dim, rst)
 	fmt.Println()
 }
