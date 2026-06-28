@@ -39,3 +39,6 @@ coverage.html
 
 # Dependencies (if vendored)
 vendor/
+
+# Devin rules
+.devin/
