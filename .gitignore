@@ -1,0 +1,41 @@
+# Binaries
+locrest-client
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Build artifacts
+*.out
+*.o
+*.a
+
+# Air live-reloader
+tmp/
+build-errors.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test & coverage
+*.test
+*.prof
+coverage.out
+coverage.html
+
+# Secrets
+.env
+.env.*
+*.key
+*.pem
+
+# Dependencies (if vendored)
+vendor/
