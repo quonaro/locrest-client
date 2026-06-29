@@ -4,10 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -16,7 +14,6 @@ import (
 	chshare "github.com/jpillora/chisel/share"
 
 	"locrest-client/internal/config"
-	"locrest-client/internal/output"
 )
 
 // Client wraps the chisel client for locrest.
@@ -50,10 +47,6 @@ func New(cfg *config.Config, token, remote, fingerprint string) (*Client, error)
 		return nil, fmt.Errorf("chisel client init: %w", err)
 	}
 	c.Debug = cfg.Debug
-
-	if !cfg.Debug {
-		log.SetOutput(output.NewSuppressWriter(os.Stderr, "Connecting to"))
-	}
 
 	return &Client{inner: c, config: cfg}, nil
 }

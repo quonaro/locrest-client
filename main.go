@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -27,8 +30,31 @@ func main() {
 
 	httpclient.SetInsecure(cfg.Insecure)
 
+	// Redirect stderr (and standard log) into a pipe so chisel logs
+	// are captured and printed after the banner.
+	pr, pw, err := os.Pipe()
+	if err != nil {
+		output.Fatal("pipe: %v", err)
+	}
+	oldStderr := os.Stderr
+	os.Stderr = pw
+	oldLogWriter := log.Writer()
+	log.SetOutput(pw)
+
+	var logBuf bytes.Buffer
+	logDone := make(chan struct{})
+	go func() {
+		io.Copy(&logBuf, pr)
+		close(logDone)
+	}()
+
 	c, err := tunnel.New(cfg, res.Token, res.Remote, res.Fingerprint)
 	if err != nil {
+		pw.Close()
+		<-logDone
+		os.Stderr = oldStderr
+		log.SetOutput(oldLogWriter)
+		oldStderr.Write(logBuf.Bytes())
 		output.Fatal("tunnel init failed: %v", err)
 	}
 
@@ -44,12 +70,24 @@ func main() {
 	}()
 
 	if err := c.Start(ctx); err != nil {
+		pw.Close()
+		<-logDone
+		os.Stderr = oldStderr
+		log.SetOutput(oldLogWriter)
+		oldStderr.Write(logBuf.Bytes())
 		output.Fatal("tunnel start failed: %v", err)
 	}
 
 	if !cfg.Debug {
 		output.PrintBanner(c.URL(), cfg.TargetHost, cfg.LocalPort, cfg.TokenTTL)
 	}
+
+	// Flush captured logs underneath the banner.
+	pw.Close()
+	<-logDone
+	os.Stderr = oldStderr
+	log.SetOutput(oldLogWriter)
+	oldStderr.Write(logBuf.Bytes())
 
 	go c.StartHeartbeat(ctx, res.PubKey, res.APIBase)
 
