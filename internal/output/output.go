@@ -37,7 +37,7 @@ func formatTTL(d time.Duration) string {
 }
 
 // PrintBanner renders the tunnel activation banner.
-func PrintBanner(url, targetHost string, localPort int, tokenTTL time.Duration, mode string) {
+func PrintBanner(url, targetHost string, localPort int, tokenTTL time.Duration, mode, httpAuth string) {
 	const (
 		grn = "\x1b[1;32m"
 		cyn = "\x1b[1;36m"
@@ -51,6 +51,9 @@ func PrintBanner(url, targetHost string, localPort int, tokenTTL time.Duration, 
 		fmt.Printf("%sDest:   %s%s%s\n", dim, cyn, url, rst)
 	} else {
 		fmt.Printf("%sURL:    %s%s%s\n", dim, cyn, url, rst)
+	}
+	if httpAuth != "" {
+		fmt.Printf("%sAuth:   %s%s%s\n", dim, cyn, httpAuth, rst)
 	}
 	fmt.Printf("%sSource: %s%s:%d%s\n", dim, cyn, targetHost, localPort, rst)
 	fmt.Printf("%sTTL:    %s%s%s\n", dim, cyn, formatTTL(tokenTTL), rst)

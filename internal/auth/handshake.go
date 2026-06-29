@@ -32,6 +32,7 @@ type verifyResp struct {
 	Remote      string `json:"remote"`
 	Fingerprint string `json:"fingerprint"`
 	Mode        string `json:"mode"`
+	HTTPAuth    string `json:"http_auth"`
 }
 
 // Result holds the token and remote route returned by the server after verification.
@@ -43,6 +44,7 @@ type Result struct {
 	PubKey      string
 	APIBase     string
 	Mode        string
+	HTTPAuth    string
 }
 
 // Run executes the full challenge-response handshake against the server.
@@ -131,5 +133,6 @@ func Run(cfg *config.Config) (*Result, error) {
 		PubKey:      pubHex,
 		APIBase:     apiBase,
 		Mode:        vResp.Mode,
+		HTTPAuth:    vResp.HTTPAuth,
 	}, nil
 }

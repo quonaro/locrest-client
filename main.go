@@ -82,7 +82,7 @@ func main() {
 	}
 
 	if !cfg.Debug {
-		output.PrintBanner(c.URL(), cfg.TargetHost, cfg.LocalPort, cfg.TokenTTL, res.Mode)
+		output.PrintBanner(c.URL(), cfg.TargetHost, cfg.LocalPort, cfg.TokenTTL, res.Mode, res.HTTPAuth)
 	}
 
 	// Flush captured logs underneath the banner.
