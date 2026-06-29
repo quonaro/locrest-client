@@ -53,7 +53,7 @@ func main() {
 		close(logDone)
 	}()
 
-	c, err := tunnel.New(cfg, res.Token, res.Remote, res.Fingerprint)
+	c, err := tunnel.New(cfg, res.Token, res.Remote, res.Fingerprint, res.Mode, res.ServerPort)
 	if err != nil {
 		pw.Close()
 		<-logDone
@@ -82,7 +82,7 @@ func main() {
 	}
 
 	if !cfg.Debug {
-		output.PrintBanner(c.URL(), cfg.TargetHost, cfg.LocalPort, cfg.TokenTTL)
+		output.PrintBanner(c.URL(), cfg.TargetHost, cfg.LocalPort, cfg.TokenTTL, res.Mode)
 	}
 
 	// Flush captured logs underneath the banner.

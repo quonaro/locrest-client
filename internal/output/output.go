@@ -37,7 +37,7 @@ func formatTTL(d time.Duration) string {
 }
 
 // PrintBanner renders the tunnel activation banner.
-func PrintBanner(url, targetHost string, localPort int, tokenTTL time.Duration) {
+func PrintBanner(url, targetHost string, localPort int, tokenTTL time.Duration, mode string) {
 	const (
 		grn = "\x1b[1;32m"
 		cyn = "\x1b[1;36m"
@@ -47,7 +47,11 @@ func PrintBanner(url, targetHost string, localPort int, tokenTTL time.Duration) 
 	)
 	fmt.Println()
 	fmt.Printf("%sLOCREST TUNNEL ACTIVE%s\n", grn, rst)
-	fmt.Printf("%sURL:    %s%s%s\n", dim, cyn, url, rst)
+	if mode == "tcp" {
+		fmt.Printf("%sDest:   %s%s%s\n", dim, cyn, url, rst)
+	} else {
+		fmt.Printf("%sURL:    %s%s%s\n", dim, cyn, url, rst)
+	}
 	fmt.Printf("%sSource: %s%s:%d%s\n", dim, cyn, targetHost, localPort, rst)
 	fmt.Printf("%sTTL:    %s%s%s\n", dim, cyn, formatTTL(tokenTTL), rst)
 	fmt.Printf("%sPress Ctrl+C to stop%s\n", red, rst)

@@ -22,10 +22,12 @@ type Client struct {
 	config     *config.Config
 	closing    atomic.Bool
 	httpClient *http.Client
+	mode       string
+	serverPort int
 }
 
 // New builds a configured chisel client ready to start.
-func New(cfg *config.Config, token, remote, fingerprint string) (*Client, error) {
+func New(cfg *config.Config, token, remote, fingerprint, mode string, serverPort int) (*Client, error) {
 	serverHost := strings.TrimPrefix(cfg.ServerURL, "ws://")
 	serverHost = strings.TrimPrefix(serverHost, "wss://")
 
@@ -55,7 +57,7 @@ func New(cfg *config.Config, token, remote, fingerprint string) (*Client, error)
 		},
 		Timeout: 10 * time.Second,
 	}
-	return &Client{inner: c, config: cfg, httpClient: httpClient}, nil
+	return &Client{inner: c, config: cfg, httpClient: httpClient, mode: mode, serverPort: serverPort}, nil
 }
 
 // Start begins the chisel tunnel.
@@ -105,8 +107,19 @@ func (c *Client) Close() {
 	c.inner.Close()
 }
 
-// URL constructs the public tunnel URL from the server address and requested subdomain.
+// URL constructs the public tunnel URL or TCP destination from the server address.
 func (c *Client) URL() string {
+	if c.mode == "tcp" {
+		host := strings.TrimPrefix(c.config.ServerURL, "ws://")
+		host = strings.TrimPrefix(host, "wss://")
+		host = strings.TrimSuffix(host, "/tunnel")
+		h, _, err := net.SplitHostPort(host)
+		if err == nil {
+			host = h
+		}
+		return fmt.Sprintf("%s:%d", host, c.serverPort)
+	}
+
 	scheme := "http"
 	if strings.HasPrefix(c.config.ServerURL, "wss://") {
 		scheme = "https"
