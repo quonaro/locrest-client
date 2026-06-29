@@ -9,6 +9,9 @@ import (
 	"time"
 )
 
+// osStdout allows tests to capture banner output.
+var osStdout io.Writer = os.Stdout
+
 // Fatal prints a formatted message to stderr and exits with code 1.
 func Fatal(format string, v ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", v...)
@@ -45,20 +48,20 @@ func PrintBanner(url, targetHost string, localPort int, tokenTTL time.Duration, 
 		dim = "\x1b[2m"
 		rst = "\x1b[0m"
 	)
-	fmt.Println()
-	fmt.Printf("%sLOCREST TUNNEL ACTIVE%s\n", grn, rst)
+	fmt.Fprintln(osStdout)
+	fmt.Fprintf(osStdout, "%sLOCREST TUNNEL ACTIVE%s\n", grn, rst)
 	if mode == "tcp" {
-		fmt.Printf("%sDest:   %s%s%s\n", dim, cyn, url, rst)
+		fmt.Fprintf(osStdout, "%sDest:   %s%s%s\n", dim, cyn, url, rst)
 	} else {
-		fmt.Printf("%sURL:    %s%s%s\n", dim, cyn, url, rst)
+		fmt.Fprintf(osStdout, "%sURL:    %s%s%s\n", dim, cyn, url, rst)
 	}
 	if httpAuth != "" {
-		fmt.Printf("%sAuth:   %s%s%s\n", dim, cyn, httpAuth, rst)
+		fmt.Fprintf(osStdout, "%sAuth:   %s%s%s\n", dim, cyn, httpAuth, rst)
 	}
-	fmt.Printf("%sSource: %s%s:%d%s\n", dim, cyn, targetHost, localPort, rst)
-	fmt.Printf("%sTTL:    %s%s%s\n", dim, cyn, formatTTL(tokenTTL), rst)
-	fmt.Printf("%sPress Ctrl+C to stop%s\n", red, rst)
-	fmt.Println()
+	fmt.Fprintf(osStdout, "%sSource: %s%s:%d%s\n", dim, cyn, targetHost, localPort, rst)
+	fmt.Fprintf(osStdout, "%sTTL:    %s%s%s\n", dim, cyn, formatTTL(tokenTTL), rst)
+	fmt.Fprintf(osStdout, "%sPress Ctrl+C to stop%s\n", red, rst)
+	fmt.Fprintln(osStdout)
 }
 
 // SuppressWriter filters log lines containing any of the configured substrings.
