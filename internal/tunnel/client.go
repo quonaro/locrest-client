@@ -23,15 +23,17 @@ type Client struct {
 }
 
 // New builds a configured chisel client ready to start.
-func New(cfg *config.Config, token, remote string) (*Client, error) {
+func New(cfg *config.Config, token, remote, fingerprint string) (*Client, error) {
 	serverHost := strings.TrimPrefix(cfg.ServerURL, "ws://")
 	serverHost = strings.TrimPrefix(serverHost, "wss://")
 
 	ccfg := &chclient.Config{
-		Server:    serverHost,
-		Auth:      fmt.Sprintf("%s:%s", cfg.Subdomain, token),
-		Remotes:   []string{remote},
-		KeepAlive: 25 * time.Second,
+		Server:      serverHost,
+		Auth:        fmt.Sprintf("%s:%s", cfg.Subdomain, token),
+		Remotes:     []string{remote},
+		KeepAlive:   25 * time.Second,
+		Fingerprint: fingerprint,
+		TLS:         chclient.TLSConfig{SkipVerify: cfg.Insecure},
 	}
 
 	if cfg.Debug {

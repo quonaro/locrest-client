@@ -9,6 +9,7 @@ import (
 
 	"locrest-client/internal/auth"
 	"locrest-client/internal/config"
+	"locrest-client/internal/httpclient"
 	"locrest-client/internal/output"
 	"locrest-client/internal/tunnel"
 )
@@ -24,7 +25,9 @@ func main() {
 		output.Fatal("auth handshake failed: %v", err)
 	}
 
-	c, err := tunnel.New(cfg, res.Token, res.Remote)
+	httpclient.SetInsecure(cfg.Insecure)
+
+	c, err := tunnel.New(cfg, res.Token, res.Remote, res.Fingerprint)
 	if err != nil {
 		output.Fatal("tunnel init failed: %v", err)
 	}

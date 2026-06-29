@@ -1,6 +1,7 @@
 package output
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -33,6 +34,7 @@ func PrintBanner(url, targetHost string, localPort int) {
 type SuppressWriter struct {
 	W     io.Writer
 	Hides []string
+	buf   []byte
 }
 
 // NewSuppressWriter creates a writer that suppresses lines matching hides.
@@ -41,11 +43,26 @@ func NewSuppressWriter(w io.Writer, hides ...string) *SuppressWriter {
 }
 
 func (s *SuppressWriter) Write(p []byte) (n int, err error) {
-	line := string(p)
-	for _, h := range s.Hides {
-		if strings.Contains(line, h) {
-			return len(p), nil
+	s.buf = append(s.buf, p...)
+	for {
+		idx := bytes.IndexByte(s.buf, '\n')
+		if idx < 0 {
+			break
 		}
+		line := s.buf[:idx+1]
+		drop := false
+		for _, h := range s.Hides {
+			if strings.Contains(string(line), h) {
+				drop = true
+				break
+			}
+		}
+		if !drop {
+			if _, err := s.W.Write(line); err != nil {
+				return len(p), err
+			}
+		}
+		s.buf = s.buf[idx+1:]
 	}
-	return s.W.Write(p)
+	return len(p), nil
 }

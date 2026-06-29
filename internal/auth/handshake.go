@@ -26,16 +26,18 @@ type verifyReq struct {
 }
 
 type verifyResp struct {
-	Token      string `json:"token"`
-	ServerPort int    `json:"server_port"`
-	Remote     string `json:"remote"`
+	Token       string `json:"token"`
+	ServerPort  int    `json:"server_port"`
+	Remote      string `json:"remote"`
+	Fingerprint string `json:"fingerprint"`
 }
 
 // Result holds the token and remote route returned by the server after verification.
 type Result struct {
-	Token      string
-	ServerPort int
-	Remote     string
+	Token       string
+	ServerPort  int
+	Remote      string
+	Fingerprint string
 }
 
 // Run executes the full challenge-response handshake against the server.
@@ -92,8 +94,9 @@ func Run(cfg *config.Config) (*Result, error) {
 	}
 
 	return &Result{
-		Token:      vResp.Token,
-		ServerPort: vResp.ServerPort,
-		Remote:     vResp.Remote,
+		Token:       vResp.Token,
+		ServerPort:  vResp.ServerPort,
+		Remote:      vResp.Remote,
+		Fingerprint: vResp.Fingerprint,
 	}, nil
 }
