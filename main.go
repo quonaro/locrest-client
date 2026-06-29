@@ -48,7 +48,7 @@ func main() {
 	}
 
 	if !cfg.Debug {
-		output.PrintBanner(c.URL(), cfg.TargetHost, cfg.LocalPort)
+		output.PrintBanner(c.URL(), cfg.TargetHost, cfg.LocalPort, cfg.TokenTTL)
 	}
 
 	go c.StartHeartbeat(ctx, res.PubKey, res.APIBase)

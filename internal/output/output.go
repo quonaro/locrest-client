@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 )
 
 // Fatal prints a formatted message to stderr and exits with code 1.
@@ -14,8 +15,23 @@ func Fatal(format string, v ...interface{}) {
 	os.Exit(1)
 }
 
+func formatTTL(d time.Duration) string {
+	if d == 0 {
+		return "unlimited"
+	}
+	m := int(d.Minutes())
+	s := int(d.Seconds()) % 60
+	if m > 0 && s == 0 {
+		return fmt.Sprintf("%dm", m)
+	}
+	if m > 0 {
+		return fmt.Sprintf("%dm %ds", m, s)
+	}
+	return fmt.Sprintf("%ds", s)
+}
+
 // PrintBanner renders the tunnel activation banner.
-func PrintBanner(url, targetHost string, localPort int) {
+func PrintBanner(url, targetHost string, localPort int, tokenTTL time.Duration) {
 	const (
 		grn = "\x1b[1;32m"
 		cyn = "\x1b[1;36m"
@@ -26,6 +42,7 @@ func PrintBanner(url, targetHost string, localPort int) {
 	fmt.Printf("  %s  LOCREST TUNNEL ACTIVE%s\n", grn, rst)
 	fmt.Printf("  %s  URL:    %s%s%s\n", dim, cyn, url, rst)
 	fmt.Printf("  %s  Source: %s%s:%d%s\n", dim, cyn, targetHost, localPort, rst)
+	fmt.Printf("  %s  TTL:    %s%s%s\n", dim, cyn, formatTTL(tokenTTL), rst)
 	fmt.Printf("  %s  Press Ctrl+C to stop%s\n", dim, rst)
 	fmt.Println()
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 // Config holds all CLI arguments for the locrest-client.
@@ -20,6 +21,7 @@ type Config struct {
 	Insecure    bool
 	Fingerprint string
 	SetupToken  string
+	TokenTTL    time.Duration
 }
 
 // Parse reads command-line flags and validates required fields.
@@ -36,6 +38,7 @@ func Parse() (*Config, error) {
 	flag.BoolVar(&cfg.Insecure, "insecure", false, "skip TLS certificate verification")
 	flag.StringVar(&cfg.Fingerprint, "fingerprint", "", "expected SSH host-key fingerprint")
 	flag.StringVar(&cfg.SetupToken, "setup-token", "", "server-issued setup token for ephemeral keypair registration")
+	flag.DurationVar(&cfg.TokenTTL, "token-ttl", 0, "token lifetime (informational)")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s -server <url> -port <n> -subdomain <name> [-key <hex> | -keyfile <path> | LOCREST_KEY=... | -setup-token <token>] [options]\n", os.Args[0])
