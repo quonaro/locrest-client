@@ -51,6 +51,8 @@ func main() {
 		output.PrintBanner(c.URL(), cfg.TargetHost, cfg.LocalPort)
 	}
 
+	go c.StartHeartbeat(ctx, res.PubKey, res.APIBase)
+
 	if err := c.Wait(); err != nil {
 		if cfg.Debug {
 			output.Fatal("tunnel exited: %v", err)

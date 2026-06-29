@@ -2,11 +2,14 @@ package tunnel
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	chclient "github.com/jpillora/chisel/client"
@@ -18,8 +21,9 @@ import (
 
 // Client wraps the chisel client for locrest.
 type Client struct {
-	inner  *chclient.Client
-	config *config.Config
+	inner   *chclient.Client
+	config  *config.Config
+	closing atomic.Bool
 }
 
 // New builds a configured chisel client ready to start.
@@ -59,9 +63,45 @@ func (c *Client) Start(ctx context.Context) error {
 	return c.inner.Start(ctx)
 }
 
+// StartHeartbeat periodically checks session liveness with the server.
+// If the session is gone (401), it closes the tunnel gracefully.
+func (c *Client) StartHeartbeat(ctx context.Context, pubKey, apiBase string) {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiBase+"/status?pubkey="+pubKey, nil)
+			if err != nil {
+				continue
+			}
+			tr := &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: c.config.Insecure},
+			}
+			client := &http.Client{Transport: tr, Timeout: 10 * time.Second}
+			resp, err := client.Do(req)
+			if err != nil {
+				continue
+			}
+			resp.Body.Close()
+			if resp.StatusCode == http.StatusUnauthorized {
+				c.closing.Store(true)
+				c.inner.Close()
+				return
+			}
+		}
+	}
+}
+
 // Wait blocks until the tunnel terminates.
 func (c *Client) Wait() error {
-	return c.inner.Wait()
+	err := c.inner.Wait()
+	if c.closing.Load() {
+		return nil
+	}
+	return err
 }
 
 // Close shuts down the tunnel connection.

@@ -39,6 +39,8 @@ type Result struct {
 	ServerPort  int
 	Remote      string
 	Fingerprint string
+	PubKey      string
+	APIBase     string
 }
 
 // Run executes the full challenge-response handshake against the server.
@@ -124,5 +126,7 @@ func Run(cfg *config.Config) (*Result, error) {
 		ServerPort:  vResp.ServerPort,
 		Remote:      vResp.Remote,
 		Fingerprint: vResp.Fingerprint,
+		PubKey:      pubHex,
+		APIBase:     apiBase,
 	}, nil
 }
