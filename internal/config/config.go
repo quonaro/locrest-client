@@ -19,6 +19,7 @@ type Config struct {
 	Debug       bool
 	Insecure    bool
 	Fingerprint string
+	SetupToken  string
 }
 
 // Parse reads command-line flags and validates required fields.
@@ -34,9 +35,10 @@ func Parse() (*Config, error) {
 	flag.BoolVar(&cfg.Debug, "debug", false, "enable verbose debug output")
 	flag.BoolVar(&cfg.Insecure, "insecure", false, "skip TLS certificate verification")
 	flag.StringVar(&cfg.Fingerprint, "fingerprint", "", "expected SSH host-key fingerprint")
+	flag.StringVar(&cfg.SetupToken, "setup-token", "", "server-issued setup token for ephemeral keypair registration")
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s -server <url> -port <n> -subdomain <name> [-key <hex> | -keyfile <path> | LOCREST_KEY=...] [options]\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage: %s -server <url> -port <n> -subdomain <name> [-key <hex> | -keyfile <path> | LOCREST_KEY=... | -setup-token <token>] [options]\n", os.Args[0])
 		fmt.Fprintln(os.Stderr, "Options:")
 		flag.PrintDefaults()
 	}
@@ -63,8 +65,8 @@ func Parse() (*Config, error) {
 	if cfg.PrivKeyHex == "" {
 		cfg.PrivKeyHex = os.Getenv("LOCREST_KEY")
 	}
-	if cfg.PrivKeyHex == "" {
-		return nil, errors.New("missing required flag: -key (or set LOCREST_KEY)")
+	if cfg.PrivKeyHex == "" && cfg.SetupToken == "" {
+		return nil, errors.New("missing required flag: -key (or set LOCREST_KEY) or -setup-token")
 	}
 
 	return &cfg, nil

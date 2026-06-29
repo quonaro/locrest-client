@@ -2,6 +2,7 @@ package auth
 
 import (
 	"crypto/ed25519"
+	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -42,20 +43,45 @@ type Result struct {
 
 // Run executes the full challenge-response handshake against the server.
 func Run(cfg *config.Config) (*Result, error) {
-	privBytes, err := hex.DecodeString(cfg.PrivKeyHex)
-	if err != nil {
-		return nil, fmt.Errorf("bad private key hex: %w", err)
+	var privateKey ed25519.PrivateKey
+	var pubKey ed25519.PublicKey
+
+	if cfg.PrivKeyHex != "" {
+		privBytes, err := hex.DecodeString(cfg.PrivKeyHex)
+		if err != nil {
+			return nil, fmt.Errorf("bad private key hex: %w", err)
+		}
+		if len(privBytes) != ed25519.PrivateKeySize {
+			return nil, fmt.Errorf("invalid ed25519 private key length: %d", len(privBytes))
+		}
+		privateKey = ed25519.PrivateKey(privBytes)
+		pubKey = privateKey.Public().(ed25519.PublicKey)
+	} else {
+		var err error
+		pubKey, privateKey, err = ed25519.GenerateKey(rand.Reader)
+		if err != nil {
+			return nil, fmt.Errorf("generate keypair: %w", err)
+		}
 	}
-	if len(privBytes) != ed25519.PrivateKeySize {
-		return nil, fmt.Errorf("invalid ed25519 private key length: %d", len(privBytes))
-	}
-	privateKey := ed25519.PrivateKey(privBytes)
-	pubKey := privateKey.Public().(ed25519.PublicKey)
 	pubHex := hex.EncodeToString(pubKey)
 
 	apiBase := strings.TrimSuffix(cfg.ServerURL, "/tunnel")
 	apiBase = strings.Replace(apiBase, "ws://", "http://", 1)
 	apiBase = strings.Replace(apiBase, "wss://", "https://", 1)
+
+	// If a setup token is provided, register the ephemeral pubkey first.
+	if cfg.SetupToken != "" {
+		regBody, err := json.Marshal(map[string]string{
+			"setup_token": cfg.SetupToken,
+			"pubkey":      pubHex,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("marshal register request: %w", err)
+		}
+		if _, err := httpclient.Post(apiBase+"/register", regBody); err != nil {
+			return nil, fmt.Errorf("register pubkey failed: %w", err)
+		}
+	}
 
 	// 1. Fetch challenge nonce.
 	chalURL := fmt.Sprintf("%s/challenge?pubkey=%s", apiBase, pubHex)
