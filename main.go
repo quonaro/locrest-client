@@ -25,6 +25,8 @@ func main() {
 		output.Fatal("configuration error: %v", err)
 	}
 
+	httpclient.SetInsecure(cfg.Insecure)
+
 	res, err := auth.Run(cfg)
 	if err != nil {
 		var httpErr *httpclient.HTTPError
@@ -34,16 +36,13 @@ func main() {
 		output.Fatal("auth handshake failed: %v", err)
 	}
 
-	httpclient.SetInsecure(cfg.Insecure)
-
-	// Redirect stderr (and standard log) into a pipe so chisel logs
+	// Redirect standard log into a pipe so chisel logs
 	// are captured and printed after the banner.
 	pr, pw, err := os.Pipe()
 	if err != nil {
 		output.Fatal("pipe: %v", err)
 	}
 	oldStderr := os.Stderr
-	os.Stderr = pw
 	oldLogWriter := log.Writer()
 	log.SetOutput(pw)
 
@@ -58,7 +57,6 @@ func main() {
 	if err != nil {
 		pw.Close()
 		<-logDone
-		os.Stderr = oldStderr
 		log.SetOutput(oldLogWriter)
 		oldStderr.Write(logBuf.Bytes())
 		output.Fatal("tunnel init failed: %v", err)
@@ -78,7 +76,6 @@ func main() {
 	if err := c.Start(ctx); err != nil {
 		pw.Close()
 		<-logDone
-		os.Stderr = oldStderr
 		log.SetOutput(oldLogWriter)
 		oldStderr.Write(logBuf.Bytes())
 		output.Fatal("tunnel start failed: %v", err)
@@ -91,7 +88,6 @@ func main() {
 	// Flush captured logs underneath the banner.
 	pw.Close()
 	<-logDone
-	os.Stderr = oldStderr
 	log.SetOutput(oldLogWriter)
 	oldStderr.Write(logBuf.Bytes())
 
