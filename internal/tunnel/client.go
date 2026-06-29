@@ -18,9 +18,10 @@ import (
 
 // Client wraps the chisel client for locrest.
 type Client struct {
-	inner   *chclient.Client
-	config  *config.Config
-	closing atomic.Bool
+	inner      *chclient.Client
+	config     *config.Config
+	closing    atomic.Bool
+	httpClient *http.Client
 }
 
 // New builds a configured chisel client ready to start.
@@ -48,7 +49,13 @@ func New(cfg *config.Config, token, remote, fingerprint string) (*Client, error)
 	}
 	c.Debug = cfg.Debug
 
-	return &Client{inner: c, config: cfg}, nil
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: cfg.Insecure},
+		},
+		Timeout: 10 * time.Second,
+	}
+	return &Client{inner: c, config: cfg, httpClient: httpClient}, nil
 }
 
 // Start begins the chisel tunnel.
@@ -70,11 +77,7 @@ func (c *Client) StartHeartbeat(ctx context.Context, pubKey, apiBase string) {
 			if err != nil {
 				continue
 			}
-			tr := &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: c.config.Insecure},
-			}
-			client := &http.Client{Transport: tr, Timeout: 10 * time.Second}
-			resp, err := client.Do(req)
+			resp, err := c.httpClient.Do(req)
 			if err != nil {
 				continue
 			}

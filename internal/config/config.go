@@ -55,6 +55,12 @@ func Parse() (*Config, error) {
 		return nil, errors.New("missing required flag: -port")
 	}
 	if cfg.Subdomain == "" {
+		cfg.Subdomain = os.Getenv("LOCREST_SUBDOMAIN")
+	}
+	if cfg.SetupToken == "" {
+		cfg.SetupToken = os.Getenv("LOCREST_SETUP_TOKEN")
+	}
+	if cfg.Subdomain == "" {
 		return nil, errors.New("missing required flag: -subdomain")
 	}
 	if cfg.PrivKeyHex == "" && cfg.KeyFile != "" {
