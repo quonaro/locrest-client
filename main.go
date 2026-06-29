@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -25,6 +27,10 @@ func main() {
 
 	res, err := auth.Run(cfg)
 	if err != nil {
+		var httpErr *httpclient.HTTPError
+		if errors.As(err, &httpErr) && (httpErr.StatusCode == http.StatusConflict || httpErr.StatusCode == http.StatusUnauthorized) {
+			output.FatalCode(2, "auth handshake failed: %v", err)
+		}
 		output.Fatal("auth handshake failed: %v", err)
 	}
 

@@ -23,10 +23,20 @@ func newClient() *http.Client {
 	return &http.Client{Transport: tr, Timeout: 10 * time.Second}
 }
 
+// HTTPError represents a non-2xx HTTP response.
+type HTTPError struct {
+	StatusCode int
+	Body       string
+}
+
+func (e *HTTPError) Error() string {
+	return fmt.Sprintf("HTTP %d: %s", e.StatusCode, e.Body)
+}
+
 func checkStatus(resp *http.Response) error {
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(body))
+		return &HTTPError{StatusCode: resp.StatusCode, Body: string(body)}
 	}
 	return nil
 }

@@ -15,6 +15,12 @@ func Fatal(format string, v ...interface{}) {
 	os.Exit(1)
 }
 
+// FatalCode prints a formatted message to stderr and exits with the given code.
+func FatalCode(code int, format string, v ...interface{}) {
+	fmt.Fprintf(os.Stderr, format+"\n", v...)
+	os.Exit(code)
+}
+
 func formatTTL(d time.Duration) string {
 	if d == 0 {
 		return "unlimited"
