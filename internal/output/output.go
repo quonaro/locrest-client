@@ -35,15 +35,16 @@ func PrintBanner(url, targetHost string, localPort int, tokenTTL time.Duration) 
 	const (
 		grn = "\x1b[1;32m"
 		cyn = "\x1b[1;36m"
+		red = "\x1b[1;31m"
 		dim = "\x1b[2m"
 		rst = "\x1b[0m"
 	)
 	fmt.Println()
-	fmt.Printf("  %s  LOCREST TUNNEL ACTIVE%s\n", grn, rst)
-	fmt.Printf("  %s  URL:    %s%s%s\n", dim, cyn, url, rst)
-	fmt.Printf("  %s  Source: %s%s:%d%s\n", dim, cyn, targetHost, localPort, rst)
-	fmt.Printf("  %s  TTL:    %s%s%s\n", dim, cyn, formatTTL(tokenTTL), rst)
-	fmt.Printf("  %s  Press Ctrl+C to stop%s\n", dim, rst)
+	fmt.Printf("%sLOCREST TUNNEL ACTIVE%s\n", grn, rst)
+	fmt.Printf("%sURL:    %s%s%s\n", dim, cyn, url, rst)
+	fmt.Printf("%sSource: %s%s:%d%s\n", dim, cyn, targetHost, localPort, rst)
+	fmt.Printf("%sTTL:    %s%s%s\n", dim, cyn, formatTTL(tokenTTL), rst)
+	fmt.Printf("%sPress Ctrl+C to stop%s\n", red, rst)
 	fmt.Println()
 }
 
@@ -59,8 +60,9 @@ func NewSuppressWriter(w io.Writer, hides ...string) *SuppressWriter {
 	return &SuppressWriter{W: w, Hides: hides}
 }
 
-func (s *SuppressWriter) Write(p []byte) (n int, err error) {
+func (s *SuppressWriter) Write(p []byte) (int, error) {
 	s.buf = append(s.buf, p...)
+	written := 0
 	for {
 		idx := bytes.IndexByte(s.buf, '\n')
 		if idx < 0 {
@@ -76,9 +78,10 @@ func (s *SuppressWriter) Write(p []byte) (n int, err error) {
 		}
 		if !drop {
 			if _, err := s.W.Write(line); err != nil {
-				return len(p), err
+				return written, err
 			}
 		}
+		written += len(line)
 		s.buf = s.buf[idx+1:]
 	}
 	return len(p), nil
