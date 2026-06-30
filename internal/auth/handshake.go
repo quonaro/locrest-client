@@ -33,6 +33,7 @@ type verifyResp struct {
 	Fingerprint string `json:"fingerprint"`
 	Mode        string `json:"mode"`
 	HTTPAuth    string `json:"http_auth"`
+	Authorized  bool   `json:"authorized"`
 }
 
 // Result holds the token and remote route returned by the server after verification.
@@ -45,6 +46,7 @@ type Result struct {
 	APIBase     string
 	Mode        string
 	HTTPAuth    string
+	Authorized  bool
 }
 
 // Run executes the full challenge-response handshake against the server.
@@ -134,5 +136,6 @@ func Run(cfg *config.Config) (*Result, error) {
 		APIBase:     apiBase,
 		Mode:        vResp.Mode,
 		HTTPAuth:    vResp.HTTPAuth,
+		Authorized:  vResp.Authorized,
 	}, nil
 }

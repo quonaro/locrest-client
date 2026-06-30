@@ -38,6 +38,7 @@ func runTestServer(t *testing.T) *httptest.Server {
 				"fingerprint": "fp",
 				"mode":        "http",
 				"http_auth":   "",
+				"authorized":  true,
 			})
 			w.Write(resp)
 		default:
@@ -80,6 +81,9 @@ func TestRunWithKey(t *testing.T) {
 	}
 	if res.Mode != "http" {
 		t.Fatalf("Mode = %q", res.Mode)
+	}
+	if !res.Authorized {
+		t.Fatalf("Authorized = %v", res.Authorized)
 	}
 	if res.APIBase == "" {
 		t.Fatal("APIBase empty")

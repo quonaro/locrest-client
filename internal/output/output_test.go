@@ -38,7 +38,7 @@ func TestPrintBanner(t *testing.T) {
 		done <- buf.String()
 	}()
 
-	PrintBanner("https://sub.example.com/", "localhost", 8080, time.Hour, "http", "user:pass")
+	PrintBanner("https://sub.example.com/", "localhost", 8080, time.Hour, "http", "user:pass", true)
 	w.Close()
 	out := <-done
 
@@ -48,6 +48,8 @@ func TestPrintBanner(t *testing.T) {
 		"localhost:8080",
 		"60m",
 		"user:pass",
+		"Session:",
+		"authorized",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("banner missing %q: %s", want, out)
@@ -67,7 +69,7 @@ func TestPrintBannerTCP(t *testing.T) {
 		done <- buf.String()
 	}()
 
-	PrintBanner("example.com:30001", "localhost", 8080, 0, "tcp", "")
+	PrintBanner("example.com:30001", "localhost", 8080, 0, "tcp", "", false)
 	w.Close()
 	out := <-done
 
