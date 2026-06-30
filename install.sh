@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-OWNER="${OWNER:-locrest}"
-REPO="${REPO:-locrest}"
+OWNER="${OWNER:-quonaro}"
+REPO="${REPO:-locrest-client}"
 VERSION="${VERSION:-latest}"
 BIN_NAME="${BIN_NAME:-locrest-client}"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"

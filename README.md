@@ -10,7 +10,7 @@ binary from GitHub Releases, and installs it to `~/.local/bin` (or
 `/usr/local/bin` when run as root).
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/locrest/locrest/main/client/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/quonaro/locrest-client/main/install.sh | bash
 ```
 
 ## License
