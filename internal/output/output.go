@@ -56,7 +56,7 @@ const (
 )
 
 // PrintBanner renders the tunnel activation banner.
-func PrintBanner(url, targetHost string, localPort int, tokenTTL time.Duration, mode, httpAuth string, authorized bool) {
+func PrintBanner(url, targetHost string, localPort int, tokenTTL time.Duration, mode, httpAuth string, username string) {
 	fmt.Fprintln(osStdout)
 	fmt.Fprintf(osStdout, "%sLOCREST TUNNEL ACTIVE%s\n", ansiBoldGreen, ansiReset)
 	if mode == "tcp" {
@@ -69,8 +69,8 @@ func PrintBanner(url, targetHost string, localPort int, tokenTTL time.Duration, 
 	}
 	fmt.Fprintf(osStdout, "%sSource: %s%s:%d%s\n", ansiDim, ansiBoldCyan, targetHost, localPort, ansiReset)
 	fmt.Fprintf(osStdout, "%sTTL:    %s%s%s\n", ansiDim, ansiBoldCyan, formatTTL(tokenTTL), ansiReset)
-	if authorized {
-		fmt.Fprintf(osStdout, "%sSession: %sauthorized%s\n", ansiDim, ansiBoldCyan, ansiReset)
+	if username != "" {
+		fmt.Fprintf(osStdout, "%sUser:   %s%s%s\n", ansiDim, ansiBoldCyan, username, ansiReset)
 	}
 	fmt.Fprintf(osStdout, "%sPress Ctrl+C to stop%s\n", ansiBoldRed, ansiReset)
 	fmt.Fprintln(osStdout)

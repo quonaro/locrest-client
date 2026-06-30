@@ -39,6 +39,7 @@ func runTestServer(t *testing.T) *httptest.Server {
 				"mode":        "http",
 				"http_auth":   "",
 				"authorized":  true,
+				"username":    "alice",
 			})
 			w.Write(resp)
 		default:
@@ -84,6 +85,9 @@ func TestRunWithKey(t *testing.T) {
 	}
 	if !res.Authorized {
 		t.Fatalf("Authorized = %v", res.Authorized)
+	}
+	if res.Username != "alice" {
+		t.Fatalf("Username = %q", res.Username)
 	}
 	if res.APIBase == "" {
 		t.Fatal("APIBase empty")

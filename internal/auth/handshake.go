@@ -34,6 +34,7 @@ type verifyResp struct {
 	Mode        string `json:"mode"`
 	HTTPAuth    string `json:"http_auth"`
 	Authorized  bool   `json:"authorized"`
+	Username    string `json:"username"`
 }
 
 // Result holds the token and remote route returned by the server after verification.
@@ -47,6 +48,7 @@ type Result struct {
 	Mode        string
 	HTTPAuth    string
 	Authorized  bool
+	Username    string
 }
 
 // Run executes the full challenge-response handshake against the server.
@@ -137,5 +139,6 @@ func Run(cfg *config.Config) (*Result, error) {
 		Mode:        vResp.Mode,
 		HTTPAuth:    vResp.HTTPAuth,
 		Authorized:  vResp.Authorized,
+		Username:    vResp.Username,
 	}, nil
 }
