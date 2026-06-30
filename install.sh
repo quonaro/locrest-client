@@ -4,7 +4,7 @@ set -e
 OWNER="${OWNER:-quonaro}"
 REPO="${REPO:-locrest-client}"
 VERSION="${VERSION:-latest}"
-BIN_NAME="${BIN_NAME:-locrest-client}"
+BIN_NAME="${BIN_NAME:-lrc}"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 
 if [ "$(id -u)" -ne 0 ] && [ "$INSTALL_DIR" = "/usr/local/bin" ]; then

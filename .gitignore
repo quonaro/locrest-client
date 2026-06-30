@@ -1,5 +1,5 @@
 # Binaries
-locrest-client
+lrc
 *.exe
 *.dll
 *.so
