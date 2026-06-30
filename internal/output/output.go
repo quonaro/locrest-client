@@ -24,6 +24,14 @@ func FatalCode(code int, format string, v ...interface{}) {
 	os.Exit(code)
 }
 
+// FatalRed prints a formatted message in red to stderr and exits with the given code.
+func FatalRed(code int, format string, v ...interface{}) {
+	fmt.Fprintf(os.Stderr, "%s", ansiBoldRed)
+	fmt.Fprintf(os.Stderr, format+"\n", v...)
+	fmt.Fprintf(os.Stderr, "%s", ansiReset)
+	os.Exit(code)
+}
+
 func formatTTL(d time.Duration) string {
 	if d == 0 {
 		return "unlimited"
@@ -39,28 +47,29 @@ func formatTTL(d time.Duration) string {
 	return fmt.Sprintf("%ds", s)
 }
 
+const (
+	ansiBoldGreen = "\x1b[1;32m"
+	ansiBoldCyan  = "\x1b[1;36m"
+	ansiBoldRed   = "\x1b[1;31m"
+	ansiDim       = "\x1b[2m"
+	ansiReset     = "\x1b[0m"
+)
+
 // PrintBanner renders the tunnel activation banner.
 func PrintBanner(url, targetHost string, localPort int, tokenTTL time.Duration, mode, httpAuth string) {
-	const (
-		grn = "\x1b[1;32m"
-		cyn = "\x1b[1;36m"
-		red = "\x1b[1;31m"
-		dim = "\x1b[2m"
-		rst = "\x1b[0m"
-	)
 	fmt.Fprintln(osStdout)
-	fmt.Fprintf(osStdout, "%sLOCREST TUNNEL ACTIVE%s\n", grn, rst)
+	fmt.Fprintf(osStdout, "%sLOCREST TUNNEL ACTIVE%s\n", ansiBoldGreen, ansiReset)
 	if mode == "tcp" {
-		fmt.Fprintf(osStdout, "%sDest:   %s%s%s\n", dim, cyn, url, rst)
+		fmt.Fprintf(osStdout, "%sDest:   %s%s%s\n", ansiDim, ansiBoldCyan, url, ansiReset)
 	} else {
-		fmt.Fprintf(osStdout, "%sURL:    %s%s%s\n", dim, cyn, url, rst)
+		fmt.Fprintf(osStdout, "%sURL:    %s%s%s\n", ansiDim, ansiBoldCyan, url, ansiReset)
 	}
 	if httpAuth != "" {
-		fmt.Fprintf(osStdout, "%sAuth:   %s%s%s\n", dim, cyn, httpAuth, rst)
+		fmt.Fprintf(osStdout, "%sAuth:   %s%s%s\n", ansiDim, ansiBoldCyan, httpAuth, ansiReset)
 	}
-	fmt.Fprintf(osStdout, "%sSource: %s%s:%d%s\n", dim, cyn, targetHost, localPort, rst)
-	fmt.Fprintf(osStdout, "%sTTL:    %s%s%s\n", dim, cyn, formatTTL(tokenTTL), rst)
-	fmt.Fprintf(osStdout, "%sPress Ctrl+C to stop%s\n", red, rst)
+	fmt.Fprintf(osStdout, "%sSource: %s%s:%d%s\n", ansiDim, ansiBoldCyan, targetHost, localPort, ansiReset)
+	fmt.Fprintf(osStdout, "%sTTL:    %s%s%s\n", ansiDim, ansiBoldCyan, formatTTL(tokenTTL), ansiReset)
+	fmt.Fprintf(osStdout, "%sPress Ctrl+C to stop%s\n", ansiBoldRed, ansiReset)
 	fmt.Fprintln(osStdout)
 }
 

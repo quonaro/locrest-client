@@ -30,8 +30,8 @@ func main() {
 	res, err := auth.Run(cfg)
 	if err != nil {
 		var httpErr *httpclient.HTTPError
-		if errors.As(err, &httpErr) && (httpErr.StatusCode == http.StatusConflict || httpErr.StatusCode == http.StatusUnauthorized) {
-			output.FatalCode(2, "auth handshake failed: %v", err)
+		if errors.As(err, &httpErr) && (httpErr.StatusCode == http.StatusConflict || httpErr.StatusCode == http.StatusUnauthorized || httpErr.StatusCode == http.StatusForbidden) {
+			output.FatalRed(2, "auth handshake failed: %v", err)
 		}
 		output.Fatal("auth handshake failed: %v", err)
 	}
