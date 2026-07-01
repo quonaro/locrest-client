@@ -38,6 +38,10 @@ jobs:
     - uses: actions/setup-go@v5
       with:
         go-version-file: go.mod
+    - name: Install UPX
+      run: |
+        sudo apt-get update -q
+        sudo apt-get install -y upx-ucl
     - name: Build all binaries
       run: |
         mkdir -p dist
@@ -46,10 +50,19 @@ jobs:
           arch="${pair#*-}"
           asset="lrc-${os}-${arch}"
           echo "building ${asset}"
-          CGO_ENABLED=0 GOOS="${os}" GOARCH="${arch}" go build -ldflags="-s -w" -o "dist/${asset}" .
-          (cd dist && sha256sum "${asset}" > "${asset}.sha256")
+          CGO_ENABLED=0 GOOS="${os}" GOARCH="${arch}" go build -ldflags="-s -w -buildid=" -o "dist/${asset}" .
+          if [ "${os}" != "darwin" ]; then
+            echo "compressing ${asset} with UPX"
+            upx --best "dist/${asset}" || echo "UPX skipped for ${asset}"
+          fi
         done
         (cd dist && find . -maxdepth 1 -type f -name 'lrc-*' ! -name '*.sha256' -exec sha256sum {} \; > checksums.txt)
+        for pair in linux-amd64 linux-arm64 linux-arm linux-386 darwin-amd64 darwin-arm64 freebsd-amd64; do
+          os="${pair%-*}"
+          arch="${pair#*-}"
+          asset="lrc-${os}-${arch}"
+          (cd dist && sha256sum "${asset}" > "${asset}.sha256")
+        done
         echo "${{ github.ref_name }}" > dist/version.txt
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
