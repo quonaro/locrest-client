@@ -51,12 +51,12 @@ func TestTunnelID(t *testing.T) {
 		LocalPort:  8080,
 		TargetHost: "localhost",
 	}
-	id := tunnelID(cfg)
+	id := TunnelID(cfg)
 	if len(id) != 16 {
-		t.Fatalf("tunnelID length = %d, want 16", len(id))
+		t.Fatalf("TunnelID length = %d, want 16", len(id))
 	}
 	if id == "" {
-		t.Fatal("tunnelID should not be empty")
+		t.Fatal("TunnelID should not be empty")
 	}
 }
 

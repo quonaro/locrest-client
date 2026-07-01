@@ -86,7 +86,8 @@ func (s *Supervisor) Stop() error {
 	return nil
 }
 
-func tunnelID(cfg *config.Config) string {
+// TunnelID generates a deterministic tunnel ID from config.
+func TunnelID(cfg *config.Config) string {
 	h := sha256.New()
 	_, _ = fmt.Fprintf(h, "%s\n%s\n%d", cfg.ServerURL, cfg.Subdomain, cfg.LocalPort)
 	return fmt.Sprintf("%x", h.Sum(nil))[:16]
@@ -104,7 +105,7 @@ func (s *Supervisor) handleStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := tunnelID(&cfg)
+	id := TunnelID(&cfg)
 
 	s.mu.Lock()
 	if _, exists := s.tunnels[id]; exists {

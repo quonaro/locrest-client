@@ -60,46 +60,53 @@ func main() {
 	runLegacy(cfg)
 }
 
+func ensureSupervisor(client *supervisor.Client) {
+	if client.Ping() {
+		return
+	}
+	output.Debug("supervisor not running, auto-starting")
+	exe, err := os.Executable()
+	if err != nil {
+		output.Debug("failed to locate executable: %v", err)
+		return
+	}
+	logPath := supervisor.DefaultLogPath()
+	_ = os.MkdirAll(filepath.Dir(logPath), 0755)
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		output.Debug("failed to open supervisor log: %v", err)
+		return
+	}
+	cmd := exec.Command(exe, "-supervisor")
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.Stdout = logFile
+	cmd.Stderr = logFile
+	cmd.Stdin = nil
+	if err := cmd.Start(); err != nil {
+		_ = logFile.Close()
+		output.Debug("failed to start supervisor: %v", err)
+		return
+	}
+	_ = logFile.Close()
+	go func() { _ = cmd.Wait() }()
+
+	for i := 0; i < 100; i++ {
+		if client.Ping() {
+			output.Debug("supervisor started")
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	output.Debug("supervisor did not start in time")
+}
+
 func runCommand(cfg *config.Config) {
 	client := supervisor.NewClient(supervisor.DefaultSocketPath())
-
+	ensureSupervisor(client)
 	if !client.Ping() {
-		output.Debug("supervisor not running, auto-starting")
-		exe, err := os.Executable()
-		if err != nil {
-			output.Fatal("failed to locate executable: %v", err)
-		}
 		logPath := supervisor.DefaultLogPath()
-		_ = os.MkdirAll(filepath.Dir(logPath), 0755)
-		logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-		if err != nil {
-			output.Fatal("failed to open supervisor log: %v", err)
-		}
-		cmd := exec.Command(exe, "-supervisor")
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-		cmd.Stdout = logFile
-		cmd.Stderr = logFile
-		cmd.Stdin = nil
-		if err := cmd.Start(); err != nil {
-			_ = logFile.Close()
-			output.Fatal("failed to start supervisor: %v", err)
-		}
-		_ = logFile.Close()
-		go func() { _ = cmd.Wait() }()
-
-		started := false
-		for i := 0; i < 100; i++ {
-			if client.Ping() {
-				started = true
-				break
-			}
-			time.Sleep(100 * time.Millisecond)
-		}
-		if !started {
-			logTail := tailLog(logPath, 5)
-			output.Fatal("supervisor did not start in time\n--- supervisor log tail ---\n%s", logTail)
-		}
-		output.Debug("supervisor started")
+		logTail := tailLog(logPath, 5)
+		output.Fatal("supervisor is not running\n--- supervisor log tail ---\n%s", logTail)
 	}
 
 	switch cfg.Command {
@@ -227,6 +234,22 @@ func runLegacy(cfg *config.Config) {
 	if !cfg.Debug {
 		output.PrintBanner(c.URL(), c.InsecureURL(), cfg.TargetHost, cfg.LocalPort, cfg.TokenTTL, res.Mode, res.HTTPAuth, res.Username)
 	}
+
+	// Register foreground tunnel with supervisor.
+	go func() {
+		client := supervisor.NewClient(supervisor.DefaultSocketPath())
+		ensureSupervisor(client)
+		_, _ = client.Start(cfg)
+	}()
+
+	// On exit, unregister from supervisor.
+	id := supervisor.TunnelID(cfg)
+	defer func() {
+		client := supervisor.NewClient(supervisor.DefaultSocketPath())
+		if client.Ping() {
+			_, _ = client.Kill(id)
+		}
+	}()
 
 	// Flush captured logs underneath the banner.
 	_ = pw.Close()
