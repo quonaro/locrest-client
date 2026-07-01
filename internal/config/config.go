@@ -12,6 +12,7 @@ import (
 // Config holds all CLI arguments for the locrest-client.
 type Config struct {
 	ServerURL   string
+	InsecureURL string
 	LocalPort   int
 	TargetHost  string
 	Subdomain   string
@@ -29,6 +30,7 @@ func Parse() (*Config, error) {
 	var cfg Config
 
 	flag.StringVar(&cfg.ServerURL, "server", "", "chisel server URL (wss://host/tunnel)")
+	flag.StringVar(&cfg.InsecureURL, "insecure-url", "", "optional insecure server URL (ws://host/tunnel)")
 	flag.IntVar(&cfg.LocalPort, "port", 0, "local port to forward")
 	flag.StringVar(&cfg.TargetHost, "host", "localhost", "target host to forward to")
 	flag.StringVar(&cfg.Subdomain, "subdomain", "", "requested subdomain")

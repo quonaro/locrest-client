@@ -38,7 +38,7 @@ func TestPrintBanner(t *testing.T) {
 		done <- buf.String()
 	}()
 
-	PrintBanner("https://sub.example.com/", "localhost", 8080, time.Hour, "http", "user:pass", "alice")
+	PrintBanner("https://sub.example.com/", "", "localhost", 8080, time.Hour, "http", "user:pass", "alice")
 	_ = w.Close()
 	out := <-done
 
@@ -69,12 +69,36 @@ func TestPrintBannerTCP(t *testing.T) {
 		done <- buf.String()
 	}()
 
-	PrintBanner("example.com:30001", "localhost", 8080, 0, "tcp", "", "")
+	PrintBanner("example.com:30001", "", "localhost", 8080, 0, "tcp", "", "")
 	_ = w.Close()
 	out := <-done
 
 	if !strings.Contains(out, "Dest:") {
 		t.Fatalf("TCP banner should show Dest: %s", out)
+	}
+}
+
+func TestPrintBannerInsecureURL(t *testing.T) {
+	old := osStdout
+	defer func() { osStdout = old }()
+	r, w := io.Pipe()
+	osStdout = w
+	done := make(chan string)
+	go func() {
+		var buf bytes.Buffer
+		_, _ = io.Copy(&buf, r)
+		done <- buf.String()
+	}()
+
+	PrintBanner("https://sub.example.com/", "http://sub.example.com/", "localhost", 8080, time.Hour, "http", "", "")
+	_ = w.Close()
+	out := <-done
+
+	if !strings.Contains(out, "Insecure URL:") {
+		t.Fatalf("banner missing Insecure URL: %s", out)
+	}
+	if !strings.Contains(out, "http://sub.example.com/") {
+		t.Fatalf("banner missing insecure URL value: %s", out)
 	}
 }
 

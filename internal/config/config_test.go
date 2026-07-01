@@ -141,3 +141,18 @@ func TestParseOptions(t *testing.T) {
 		t.Fatalf("TokenTTL = %v", cfg.TokenTTL)
 	}
 }
+
+func TestParseInsecureURL(t *testing.T) {
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+
+	os.Args = []string{"test", "-server", "wss://example.com/tunnel", "-port", "8080", "-subdomain", "sub", "-insecure-url", "ws://example.com/tunnel", "-key", "aabbcc"}
+	cfg, err := Parse()
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if cfg.InsecureURL != "ws://example.com/tunnel" {
+		t.Fatalf("InsecureURL = %q", cfg.InsecureURL)
+	}
+}

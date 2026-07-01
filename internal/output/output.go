@@ -56,13 +56,16 @@ const (
 )
 
 // PrintBanner renders the tunnel activation banner.
-func PrintBanner(url, targetHost string, localPort int, tokenTTL time.Duration, mode, httpAuth string, username string) {
+func PrintBanner(url, insecureURL, targetHost string, localPort int, tokenTTL time.Duration, mode, httpAuth string, username string) {
 	_, _ = fmt.Fprintln(osStdout)
 	_, _ = fmt.Fprintf(osStdout, "%sLOCREST TUNNEL ACTIVE%s\n", ansiBoldGreen, ansiReset)
 	if mode == "tcp" {
 		_, _ = fmt.Fprintf(osStdout, "%sDest:   %s%s%s\n", ansiDim, ansiBoldCyan, url, ansiReset)
 	} else {
 		_, _ = fmt.Fprintf(osStdout, "%sURL:    %s%s%s\n", ansiDim, ansiBoldCyan, url, ansiReset)
+	}
+	if insecureURL != "" {
+		_, _ = fmt.Fprintf(osStdout, "%sInsecure URL: %s%s%s\n", ansiDim, ansiBoldCyan, insecureURL, ansiReset)
 	}
 	if httpAuth != "" {
 		_, _ = fmt.Fprintf(osStdout, "%sAuth:   %s%s%s\n", ansiDim, ansiBoldCyan, httpAuth, ansiReset)
