@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"locrest-client/internal/output"
+	"lrc/internal/output"
 	"net/http"
 	"time"
 )

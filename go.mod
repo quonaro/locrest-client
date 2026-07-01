@@ -1,4 +1,4 @@
-module locrest-client
+module lrc
 
 go 1.26.4
 

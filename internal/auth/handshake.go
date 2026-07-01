@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"strings"
 
-	"locrest-client/internal/config"
-	"locrest-client/internal/httpclient"
-	"locrest-client/internal/output"
+	"lrc/internal/config"
+	"lrc/internal/httpclient"
+	"lrc/internal/output"
 )
 
 type challengeResp struct {

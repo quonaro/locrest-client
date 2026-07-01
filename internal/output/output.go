@@ -69,6 +69,22 @@ const (
 	ansiReset     = "\x1b[0m"
 )
 
+// PrintTable prints a table of tunnel entries.
+func PrintTable(entries []map[string]interface{}) {
+	_, _ = fmt.Fprintf(osStdout, "%-16s %-24s %-12s %-20s %-10s %s\n", "ID", "SERVER", "SUBDOMAIN", "LOCAL", "STATUS", "URL")
+	_, _ = fmt.Fprintln(osStdout, strings.Repeat("-", 100))
+	for _, e := range entries {
+		_, _ = fmt.Fprintf(osStdout, "%-16s %-24s %-12s %-20s %-10s %s\n",
+			fmt.Sprint(e["id"]),
+			fmt.Sprint(e["server"]),
+			fmt.Sprint(e["subdomain"]),
+			fmt.Sprint(e["local"]),
+			fmt.Sprint(e["status"]),
+			fmt.Sprint(e["url"]),
+		)
+	}
+}
+
 // PrintBanner renders the tunnel activation banner.
 func PrintBanner(url, insecureURL, targetHost string, localPort int, tokenTTL time.Duration, mode, httpAuth string, username string) {
 	_, _ = fmt.Fprintln(osStdout)

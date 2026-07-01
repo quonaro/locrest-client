@@ -156,3 +156,77 @@ func TestParseInsecureURL(t *testing.T) {
 		t.Fatalf("InsecureURL = %q", cfg.InsecureURL)
 	}
 }
+
+func TestParseSubcommandList(t *testing.T) {
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+
+	os.Args = []string{"test", "list"}
+	cfg, err := Parse()
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if cfg.Command != "list" {
+		t.Fatalf("Command = %q, want list", cfg.Command)
+	}
+}
+
+func TestParseSubcommandAdd(t *testing.T) {
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+
+	os.Args = []string{"test", "add", "-server", "wss://example.com/tunnel", "-port", "8080", "-subdomain", "sub", "-key", "deadbeef"}
+	cfg, err := Parse()
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if cfg.Command != "add" {
+		t.Fatalf("Command = %q, want add", cfg.Command)
+	}
+	if cfg.ServerURL != "wss://example.com/tunnel" {
+		t.Fatalf("ServerURL = %q", cfg.ServerURL)
+	}
+	if cfg.PrivKeyHex != "deadbeef" {
+		t.Fatalf("PrivKeyHex = %q", cfg.PrivKeyHex)
+	}
+}
+
+func TestParseSubcommandAddEnv(t *testing.T) {
+	resetFlags()
+	oldArgs := os.Args
+	oldEnv := os.Getenv("LOCREST_KEY")
+	defer func() {
+		os.Args = oldArgs
+		_ = os.Setenv("LOCREST_KEY", oldEnv)
+	}()
+	_ = os.Setenv("LOCREST_KEY", "envkey")
+
+	os.Args = []string{"test", "add", "-server", "wss://example.com/tunnel", "-port", "8080", "-subdomain", "sub"}
+	cfg, err := Parse()
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if cfg.PrivKeyHex != "envkey" {
+		t.Fatalf("PrivKeyHex = %q, want envkey", cfg.PrivKeyHex)
+	}
+}
+
+func TestParseSubcommandKill(t *testing.T) {
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+
+	os.Args = []string{"test", "kill", "abc123"}
+	cfg, err := Parse()
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if cfg.Command != "kill" {
+		t.Fatalf("Command = %q, want kill", cfg.Command)
+	}
+	if cfg.TargetID != "abc123" {
+		t.Fatalf("TargetID = %q, want abc123", cfg.TargetID)
+	}
+}

@@ -13,8 +13,8 @@ import (
 	chclient "github.com/jpillora/chisel/client"
 	chshare "github.com/jpillora/chisel/share"
 
-	"locrest-client/internal/config"
-	"locrest-client/internal/output"
+	"lrc/internal/config"
+	"lrc/internal/output"
 )
 
 // Client wraps the chisel client for locrest.

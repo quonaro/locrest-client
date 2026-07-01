@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"locrest-client/internal/config"
-	"locrest-client/internal/httpclient"
+	"lrc/internal/config"
+	"lrc/internal/httpclient"
 )
 
 func runTestServer(t *testing.T) *httptest.Server {

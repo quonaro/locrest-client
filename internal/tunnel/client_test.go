@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"locrest-client/internal/config"
+	"lrc/internal/config"
 )
 
 func TestURLHTTP(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"locrest-client/internal/output"
+	"lrc/internal/output"
 	"os"
 	"strings"
 	"time"
@@ -24,6 +24,9 @@ type Config struct {
 	Fingerprint string
 	SetupToken  string
 	TokenTTL    time.Duration
+	Supervisor  bool
+	Command     string
+	TargetID    string
 }
 
 // Parse reads command-line flags and validates required fields.
@@ -42,9 +45,12 @@ func Parse() (*Config, error) {
 	flag.StringVar(&cfg.Fingerprint, "fingerprint", "", "expected SSH host-key fingerprint")
 	flag.StringVar(&cfg.SetupToken, "setup-token", "", "server-issued setup token for ephemeral keypair registration")
 	flag.DurationVar(&cfg.TokenTTL, "token-ttl", 0, "token lifetime (informational)")
+	flag.BoolVar(&cfg.Supervisor, "supervisor", false, "run as background supervisor")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s -server <url> -port <n> -subdomain <name> [-key <hex> | -keyfile <path> | LOCREST_KEY=... | -setup-token <token>] [options]\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "   or: %s <command> [options]\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Commands: add, list, kill <id>, status <id>, logs <id>\n")
 		fmt.Fprintln(os.Stderr, "Options:")
 		flag.PrintDefaults()
 	}
@@ -52,6 +58,39 @@ func Parse() (*Config, error) {
 	flag.Parse()
 	output.Debug("flags parsed")
 
+	// Detect subcommand mode.
+	if len(os.Args) > 1 && !strings.HasPrefix(os.Args[1], "-") {
+		cfg.Command = os.Args[1]
+		if len(os.Args) > 2 && !strings.HasPrefix(os.Args[2], "-") {
+			cfg.TargetID = os.Args[2]
+		}
+		// Reparse to pick up flags after the subcommand.
+		flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+		flag.StringVar(&cfg.ServerURL, "server", "", "chisel server URL (wss://host/tunnel)")
+		flag.StringVar(&cfg.InsecureURL, "insecure-url", "", "optional insecure server URL (ws://host/tunnel)")
+		flag.IntVar(&cfg.LocalPort, "port", 0, "local port to forward")
+		flag.StringVar(&cfg.TargetHost, "host", "localhost", "target host to forward to")
+		flag.StringVar(&cfg.Subdomain, "subdomain", "", "requested subdomain")
+		flag.StringVar(&cfg.PrivKeyHex, "key", "", "hex-encoded ed25519 private key")
+		flag.StringVar(&cfg.KeyFile, "keyfile", "", "path to file containing hex-encoded ed25519 private key")
+		flag.BoolVar(&cfg.Debug, "debug", false, "enable verbose debug output")
+		flag.BoolVar(&cfg.Insecure, "insecure", false, "skip TLS certificate verification")
+		flag.StringVar(&cfg.Fingerprint, "fingerprint", "", "expected SSH host-key fingerprint")
+		flag.StringVar(&cfg.SetupToken, "setup-token", "", "server-issued setup token for ephemeral keypair registration")
+		flag.DurationVar(&cfg.TokenTTL, "token-ttl", 0, "token lifetime (informational)")
+		flag.BoolVar(&cfg.Supervisor, "supervisor", false, "run as background supervisor")
+		_ = flag.CommandLine.Parse(os.Args[2:])
+		output.Debug("subcommand mode: %s", cfg.Command)
+		if cfg.Command == "add" {
+			return resolveAndValidate(&cfg)
+		}
+		return &cfg, nil
+	}
+
+	return resolveAndValidate(&cfg)
+}
+
+func resolveAndValidate(cfg *Config) (*Config, error) {
 	if cfg.ServerURL == "" {
 		return nil, errors.New("missing required flag: -server")
 	}
@@ -93,5 +132,5 @@ func Parse() (*Config, error) {
 		return nil, errors.New("missing required flag: -key (or set LOCREST_KEY) or -setup-token")
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }

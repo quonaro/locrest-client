@@ -12,11 +12,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"locrest-client/internal/auth"
-	"locrest-client/internal/config"
-	"locrest-client/internal/httpclient"
-	"locrest-client/internal/output"
-	"locrest-client/internal/tunnel"
+	"lrc/internal/auth"
+	"lrc/internal/config"
+	"lrc/internal/httpclient"
+	"lrc/internal/output"
+	"lrc/internal/supervisor"
+	"lrc/internal/tunnel"
 )
 
 func main() {
@@ -26,6 +27,84 @@ func main() {
 	}
 
 	output.SetDebug(cfg.Debug)
+
+	// Supervisor mode.
+	if cfg.Supervisor {
+		output.Debug("starting supervisor")
+		s := supervisor.NewSupervisor(supervisor.DefaultSocketPath())
+		if err := s.Run(); err != nil {
+			output.Fatal("supervisor: %v", err)
+		}
+		return
+	}
+
+	// CLI command mode.
+	if cfg.Command != "" {
+		output.Debug("running command: %s", cfg.Command)
+		runCommand(cfg)
+		return
+	}
+
+	// Legacy foreground mode.
+	runLegacy(cfg)
+}
+
+func runCommand(cfg *config.Config) {
+	client := supervisor.NewClient(supervisor.DefaultSocketPath())
+
+	switch cfg.Command {
+	case "add":
+		httpclient.SetInsecure(cfg.Insecure)
+		res, err := client.Start(cfg)
+		if err != nil {
+			output.Fatal("add failed: %v", err)
+		}
+		fmt.Printf("Tunnel started: %s\n", res["id"])
+	case "list":
+		tunnels, err := client.List()
+		if err != nil {
+			output.Fatal("list failed: %v", err)
+		}
+		if len(tunnels) == 0 {
+			fmt.Println("No active tunnels")
+			return
+		}
+		output.PrintTable(tunnels)
+	case "kill":
+		if cfg.TargetID == "" {
+			output.Fatal("usage: kill <id>")
+		}
+		_, err := client.Kill(cfg.TargetID)
+		if err != nil {
+			output.Fatal("kill failed: %v", err)
+		}
+		fmt.Printf("Tunnel %s stopped\n", cfg.TargetID)
+	case "status":
+		if cfg.TargetID == "" {
+			output.Fatal("usage: status <id>")
+		}
+		res, err := client.Status(cfg.TargetID)
+		if err != nil {
+			output.Fatal("status failed: %v", err)
+		}
+		output.PrintTable([]map[string]interface{}{res})
+	case "logs":
+		if cfg.TargetID == "" {
+			output.Fatal("usage: logs <id>")
+		}
+		lines, err := client.Logs(cfg.TargetID)
+		if err != nil {
+			output.Fatal("logs failed: %v", err)
+		}
+		for _, line := range lines {
+			fmt.Println(line)
+		}
+	default:
+		output.Fatal("unknown command: %s", cfg.Command)
+	}
+}
+
+func runLegacy(cfg *config.Config) {
 	output.Debug("config parsed: server=%s port=%d subdomain=%s insecure=%v", cfg.ServerURL, cfg.LocalPort, cfg.Subdomain, cfg.Insecure)
 
 	httpclient.SetInsecure(cfg.Insecure)
