@@ -2,6 +2,7 @@ package supervisor
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"lrc/internal/auth"
@@ -12,6 +13,7 @@ import (
 
 // TunnelInstance holds the state for a single managed tunnel.
 type TunnelInstance struct {
+	mu      sync.RWMutex
 	ID      string
 	Config  *config.Config
 	AuthRes *auth.Result
@@ -31,8 +33,10 @@ const (
 
 // RunTunnel executes the auth + tunnel lifecycle with backoff reconnect.
 func RunTunnel(ctx context.Context, inst *TunnelInstance) {
+	inst.mu.Lock()
 	inst.Status = statusConnecting
 	inst.Since = time.Now()
+	inst.mu.Unlock()
 
 	backoff := time.Second
 	maxBackoff := 30 * time.Second
@@ -40,18 +44,24 @@ func RunTunnel(ctx context.Context, inst *TunnelInstance) {
 	for {
 		select {
 		case <-ctx.Done():
+			inst.mu.Lock()
 			inst.Status = statusStopped
+			inst.mu.Unlock()
 			return
 		default:
 		}
 
+		inst.mu.Lock()
 		inst.Status = statusConnecting
+		inst.mu.Unlock()
 		output.Debug("[%s] auth handshake", inst.ID)
 
 		res, err := auth.Run(inst.Config)
 		if err != nil {
+			inst.mu.Lock()
 			inst.LastErr = err.Error()
 			inst.Status = statusError
+			inst.mu.Unlock()
 			output.Debug("[%s] auth failed: %v", inst.ID, err)
 			if !sleepCtx(ctx, backoff) {
 				return
@@ -60,7 +70,9 @@ func RunTunnel(ctx context.Context, inst *TunnelInstance) {
 			continue
 		}
 
+		inst.mu.Lock()
 		inst.AuthRes = res
+		inst.mu.Unlock()
 		remotes := []string{res.Remote}
 		if res.RemoteUDP != "" {
 			remotes = append(remotes, res.RemoteUDP)
@@ -68,8 +80,10 @@ func RunTunnel(ctx context.Context, inst *TunnelInstance) {
 
 		c, err := tunnel.New(inst.Config, res.Token, remotes, res.Fingerprint, res.Mode, res.ServerPort)
 		if err != nil {
+			inst.mu.Lock()
 			inst.LastErr = err.Error()
 			inst.Status = statusError
+			inst.mu.Unlock()
 			output.Debug("[%s] tunnel init failed: %v", inst.ID, err)
 			if !sleepCtx(ctx, backoff) {
 				return
@@ -78,9 +92,11 @@ func RunTunnel(ctx context.Context, inst *TunnelInstance) {
 			continue
 		}
 
+		inst.mu.Lock()
 		inst.URL = c.URL()
 		inst.Status = statusRunning
 		inst.LastErr = ""
+		inst.mu.Unlock()
 		output.Debug("[%s] tunnel started: %s", inst.ID, inst.URL)
 
 		// Start heartbeat in background.
@@ -91,13 +107,17 @@ func RunTunnel(ctx context.Context, inst *TunnelInstance) {
 		hbCancel()
 
 		if err != nil {
+			inst.mu.Lock()
 			inst.LastErr = err.Error()
+			inst.mu.Unlock()
 			output.Debug("[%s] tunnel start error: %v", inst.ID, err)
 		} else {
 			output.Debug("[%s] tunnel exited", inst.ID)
 		}
 
+		inst.mu.Lock()
 		inst.Status = statusError
+		inst.mu.Unlock()
 		if !sleepCtx(ctx, backoff) {
 			return
 		}

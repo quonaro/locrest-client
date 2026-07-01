@@ -250,10 +250,6 @@ func TestHandleStartBadJSON(t *testing.T) {
 func TestReadLogLines(t *testing.T) {
 	dir := t.TempDir()
 	logPath := filepath.Join(dir, "test.log")
-	oldLogPath := DefaultLogPath
-	// monkey-patch DefaultLogPath for the test
-	_ = oldLogPath
-	// Can't easily monkey-patch, so test inline.
 	content := "line1 abc123\nline2 def456\nline3 abc123\n"
 	if err := os.WriteFile(logPath, []byte(content), 0644); err != nil {
 		t.Fatalf("write log: %v", err)
@@ -265,7 +261,6 @@ func TestReadLogLines(t *testing.T) {
 	}
 	defer func() { _ = f.Close() }()
 
-	// Quick check that our filtering logic works.
 	lines := filterFileLines(f, "abc123")
 	if len(lines) != 2 {
 		t.Fatalf("len(lines) = %d, want 2", len(lines))

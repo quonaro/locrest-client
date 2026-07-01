@@ -43,7 +43,14 @@ func main() {
 		signal.Ignore(syscall.SIGHUP)
 		output.Debug("starting supervisor")
 		s := supervisor.NewSupervisor(supervisor.DefaultSocketPath())
-		if err := s.Run(); err != nil {
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+		go func() {
+			<-sigCh
+			output.Debug("received shutdown signal")
+			_ = s.Stop()
+		}()
+		if err := s.Run(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			output.Fatal("supervisor: %v", err)
 		}
 		return
@@ -65,6 +72,20 @@ func ensureSupervisor(client *supervisor.Client) {
 		return
 	}
 	output.Debug("supervisor not running, auto-starting")
+
+	// Another process may already be starting it; wait briefly.
+	if supervisor.IsRunning(supervisor.DefaultSocketPath()) {
+		for i := 0; i < 50; i++ {
+			if client.Ping() {
+				output.Debug("supervisor started by another process")
+				return
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		output.Debug("supervisor did not start in time")
+		return
+	}
+
 	exe, err := os.Executable()
 	if err != nil {
 		output.Debug("failed to locate executable: %v", err)
