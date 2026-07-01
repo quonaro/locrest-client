@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"locrest-client/internal/output"
 	"net/http"
 	"time"
 )
@@ -43,11 +44,13 @@ func checkStatus(resp *http.Response) error {
 
 // Get performs an HTTPS GET with a 10s timeout.
 func Get(url string) ([]byte, error) {
+	output.Debug("http GET %s", url)
 	resp, err := newClient().Get(url)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
+	output.Debug("http GET %s -> %d", url, resp.StatusCode)
 	if err := checkStatus(resp); err != nil {
 		return nil, err
 	}
@@ -56,11 +59,13 @@ func Get(url string) ([]byte, error) {
 
 // Post performs an HTTPS POST with a 10s timeout.
 func Post(url string, body []byte) ([]byte, error) {
+	output.Debug("http POST %s len=%d", url, len(body))
 	resp, err := newClient().Post(url, "application/json", bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
+	output.Debug("http POST %s -> %d", url, resp.StatusCode)
 	if err := checkStatus(resp); err != nil {
 		return nil, err
 	}

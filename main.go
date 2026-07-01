@@ -25,6 +25,9 @@ func main() {
 		output.Fatal("configuration error: %v", err)
 	}
 
+	output.SetDebug(cfg.Debug)
+	output.Debug("config parsed: server=%s port=%d subdomain=%s insecure=%v", cfg.ServerURL, cfg.LocalPort, cfg.Subdomain, cfg.Insecure)
+
 	httpclient.SetInsecure(cfg.Insecure)
 
 	res, err := auth.Run(cfg)
@@ -35,6 +38,7 @@ func main() {
 		}
 		output.Fatal("auth handshake failed: %v", err)
 	}
+	output.Debug("auth complete: mode=%s server_port=%d authorized=%v", res.Mode, res.ServerPort, res.Authorized)
 
 	// Redirect standard log into a pipe so chisel logs
 	// are captured and printed after the banner.
@@ -57,6 +61,7 @@ func main() {
 	if res.RemoteUDP != "" {
 		remotes = append(remotes, res.RemoteUDP)
 	}
+	output.Debug("creating tunnel: remotes=%v fingerprint=%s mode=%s", remotes, res.Fingerprint, res.Mode)
 	c, err := tunnel.New(cfg, res.Token, remotes, res.Fingerprint, res.Mode, res.ServerPort)
 	if err != nil {
 		_ = pw.Close()
@@ -73,10 +78,12 @@ func main() {
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sigCh
+		output.Debug("received shutdown signal")
 		cancel()
 		c.Close()
 	}()
 
+	output.Debug("starting tunnel")
 	if err := c.Start(ctx); err != nil {
 		_ = pw.Close()
 		<-logDone
@@ -84,6 +91,7 @@ func main() {
 		_, _ = oldStderr.Write(logBuf.Bytes())
 		output.Fatal("tunnel start failed: %v", err)
 	}
+	output.Debug("tunnel started")
 
 	if !cfg.Debug {
 		output.PrintBanner(c.URL(), c.InsecureURL(), cfg.TargetHost, cfg.LocalPort, cfg.TokenTTL, res.Mode, res.HTTPAuth, res.Username)
@@ -95,6 +103,7 @@ func main() {
 	log.SetOutput(oldLogWriter)
 	_, _ = oldStderr.Write(logBuf.Bytes())
 
+	output.Debug("starting heartbeat")
 	go c.StartHeartbeat(ctx, res.PubKey, res.APIBase)
 
 	if err := c.Wait(); err != nil {

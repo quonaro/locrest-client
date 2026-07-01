@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"locrest-client/internal/output"
 	"os"
 	"strings"
 	"time"
@@ -49,6 +50,7 @@ func Parse() (*Config, error) {
 	}
 
 	flag.Parse()
+	output.Debug("flags parsed")
 
 	if cfg.ServerURL == "" {
 		return nil, errors.New("missing required flag: -server")
@@ -58,23 +60,34 @@ func Parse() (*Config, error) {
 	}
 	if cfg.Subdomain == "" {
 		cfg.Subdomain = os.Getenv("LOCREST_SUBDOMAIN")
+		if cfg.Subdomain != "" {
+			output.Debug("subdomain loaded from env")
+		}
 	}
 	if cfg.SetupToken == "" {
 		cfg.SetupToken = os.Getenv("LOCREST_SETUP_TOKEN")
+		if cfg.SetupToken != "" {
+			output.Debug("setup token loaded from env")
+		}
 	}
 	if cfg.Subdomain == "" {
 		return nil, errors.New("missing required flag: -subdomain")
 	}
 	if cfg.PrivKeyHex == "" && cfg.KeyFile != "" {
+		output.Debug("reading keyfile: %s", cfg.KeyFile)
 		b, err := os.ReadFile(cfg.KeyFile)
 		if err != nil {
 			return nil, fmt.Errorf("read keyfile: %w", err)
 		}
 		_ = os.Remove(cfg.KeyFile) // burn after reading
 		cfg.PrivKeyHex = strings.TrimSpace(string(b))
+		output.Debug("keyfile read and removed")
 	}
 	if cfg.PrivKeyHex == "" {
 		cfg.PrivKeyHex = os.Getenv("LOCREST_KEY")
+		if cfg.PrivKeyHex != "" {
+			output.Debug("private key loaded from env")
+		}
 	}
 	if cfg.PrivKeyHex == "" && cfg.SetupToken == "" {
 		return nil, errors.New("missing required flag: -key (or set LOCREST_KEY) or -setup-token")

@@ -9,6 +9,20 @@ import (
 	"time"
 )
 
+var debugEnabled bool
+
+// SetDebug enables or disables debug output.
+func SetDebug(v bool) {
+	debugEnabled = v
+}
+
+// Debug prints a formatted debug message to stderr when debug mode is enabled.
+func Debug(format string, v ...interface{}) {
+	if debugEnabled {
+		fmt.Fprintf(os.Stderr, "[debug] "+format+"\n", v...)
+	}
+}
+
 // osStdout allows tests to capture banner output.
 var osStdout io.Writer = os.Stdout
 

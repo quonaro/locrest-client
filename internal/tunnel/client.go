@@ -14,6 +14,7 @@ import (
 	chshare "github.com/jpillora/chisel/share"
 
 	"locrest-client/internal/config"
+	"locrest-client/internal/output"
 )
 
 // Client wraps the chisel client for locrest.
@@ -46,6 +47,7 @@ func New(cfg *config.Config, token string, remotes []string, fingerprint, mode s
 	if cfg.Debug {
 		chshare.BuildVersion = "dev"
 		ccfg.Verbose = true
+		output.Debug("chisel verbose mode enabled")
 	}
 
 	c, err := chclient.NewClient(ccfg)
@@ -53,6 +55,7 @@ func New(cfg *config.Config, token string, remotes []string, fingerprint, mode s
 		return nil, fmt.Errorf("chisel client init: %w", err)
 	}
 	c.Debug = cfg.Debug
+	output.Debug("chisel client created: server=%s remotes=%v", serverHost, remotes)
 
 	httpClient := &http.Client{
 		Transport: &http.Transport{
@@ -65,29 +68,36 @@ func New(cfg *config.Config, token string, remotes []string, fingerprint, mode s
 
 // Start begins the chisel tunnel.
 func (c *Client) Start(ctx context.Context) error {
+	output.Debug("tunnel starting")
 	return c.inner.Start(ctx)
 }
 
 // StartHeartbeat periodically checks session liveness with the server.
 // If the session is gone (401), it closes the tunnel gracefully.
 func (c *Client) StartHeartbeat(ctx context.Context, pubKey, apiBase string) {
+	output.Debug("heartbeat started: interval=30s")
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
+			output.Debug("heartbeat stopped: context done")
 			return
 		case <-ticker.C:
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiBase+"/status?pubkey="+pubKey, nil)
 			if err != nil {
+				output.Debug("heartbeat request error: %v", err)
 				continue
 			}
 			resp, err := c.httpClient.Do(req)
 			if err != nil {
+				output.Debug("heartbeat response error: %v", err)
 				continue
 			}
 			_ = resp.Body.Close()
+			output.Debug("heartbeat status: %d", resp.StatusCode)
 			if resp.StatusCode == http.StatusUnauthorized {
+				output.Debug("heartbeat unauthorized, closing tunnel")
 				c.closing.Store(true)
 				_ = c.inner.Close()
 				return
@@ -98,8 +108,10 @@ func (c *Client) StartHeartbeat(ctx context.Context, pubKey, apiBase string) {
 
 // Wait blocks until the tunnel terminates.
 func (c *Client) Wait() error {
+	output.Debug("tunnel waiting")
 	err := c.inner.Wait()
 	if c.closing.Load() {
+		output.Debug("tunnel closed gracefully")
 		return nil
 	}
 	return err
@@ -107,6 +119,7 @@ func (c *Client) Wait() error {
 
 // Close shuts down the tunnel connection.
 func (c *Client) Close() {
+	output.Debug("tunnel closing")
 	_ = c.inner.Close()
 }
 

@@ -11,6 +11,7 @@ import (
 
 	"locrest-client/internal/config"
 	"locrest-client/internal/httpclient"
+	"locrest-client/internal/output"
 )
 
 type challengeResp struct {
@@ -68,21 +69,25 @@ func Run(cfg *config.Config) (*Result, error) {
 		}
 		privateKey = ed25519.PrivateKey(privBytes)
 		pubKey = privateKey.Public().(ed25519.PublicKey)
+		output.Debug("using provided private key")
 	} else {
 		var err error
 		pubKey, privateKey, err = ed25519.GenerateKey(rand.Reader)
 		if err != nil {
 			return nil, fmt.Errorf("generate keypair: %w", err)
 		}
+		output.Debug("generated ephemeral keypair")
 	}
 	pubHex := hex.EncodeToString(pubKey)
 
 	apiBase := strings.TrimSuffix(cfg.ServerURL, "/tunnel")
 	apiBase = strings.Replace(apiBase, "ws://", "http://", 1)
 	apiBase = strings.Replace(apiBase, "wss://", "https://", 1)
+	output.Debug("api base: %s", apiBase)
 
 	// If a setup token is provided, register the ephemeral pubkey first.
 	if cfg.SetupToken != "" {
+		output.Debug("registering ephemeral pubkey with setup token")
 		regBody, err := json.Marshal(map[string]string{
 			"setup_token": cfg.SetupToken,
 			"pubkey":      pubHex,
@@ -93,10 +98,12 @@ func Run(cfg *config.Config) (*Result, error) {
 		if _, err := httpclient.Post(apiBase+"/register", regBody); err != nil {
 			return nil, fmt.Errorf("register pubkey failed: %w", err)
 		}
+		output.Debug("pubkey registered")
 	}
 
 	// 1. Fetch challenge nonce.
 	chalURL := fmt.Sprintf("%s/challenge?pubkey=%s", apiBase, pubHex)
+	output.Debug("fetching challenge: %s", chalURL)
 	chalBody, err := httpclient.Get(chalURL)
 	if err != nil {
 		return nil, fmt.Errorf("challenge request failed: %w", err)
@@ -105,13 +112,16 @@ func Run(cfg *config.Config) (*Result, error) {
 	if err := json.Unmarshal(chalBody, &chal); err != nil {
 		return nil, fmt.Errorf("challenge decode failed: %w", err)
 	}
+	output.Debug("challenge received: nonce=%s subdomain=%s server_port=%d", chal.Nonce, chal.Subdomain, chal.ServerPort)
 
 	// 2. Sign nonce.
 	sig := ed25519.Sign(privateKey, []byte(chal.Nonce))
 	sigB64 := base64.StdEncoding.EncodeToString(sig)
+	output.Debug("nonce signed")
 
 	// 3. Verify signature and receive chisel token.
 	verifyURL := fmt.Sprintf("%s/verify", apiBase)
+	output.Debug("posting verify to %s", verifyURL)
 	vReq := verifyReq{
 		PubKey:    pubHex,
 		Signature: sigB64,
@@ -130,6 +140,7 @@ func Run(cfg *config.Config) (*Result, error) {
 	if err := json.Unmarshal(respBody, &vResp); err != nil {
 		return nil, fmt.Errorf("verify decode failed: %w", err)
 	}
+	output.Debug("verify response: token_len=%d remote=%s remote_udp=%s", len(vResp.Token), vResp.Remote, vResp.RemoteUDP)
 
 	return &Result{
 		Token:       vResp.Token,
