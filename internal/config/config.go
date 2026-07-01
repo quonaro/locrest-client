@@ -102,6 +102,11 @@ func Parse() (*Config, error) {
 }
 
 func resolveAndValidate(cfg *Config) (*Config, error) {
+	// Supervisor mode does not need tunnel flags.
+	if cfg.Supervisor {
+		return cfg, nil
+	}
+
 	if cfg.ServerURL == "" {
 		return nil, errors.New("missing required flag: -server")
 	}
