@@ -119,13 +119,24 @@ func (c *Client) URL() string {
 		}
 		return fmt.Sprintf("%s:%d", host, c.serverPort)
 	}
+	return buildPublicURL(c.config.ServerURL, c.config.Subdomain)
+}
 
+// InsecureURL returns the plain-HTTP public tunnel URL when an insecure server URL is configured.
+func (c *Client) InsecureURL() string {
+	if c.config.InsecureURL == "" || c.mode == "tcp" {
+		return ""
+	}
+	return buildPublicURL(c.config.InsecureURL, c.config.Subdomain)
+}
+
+func buildPublicURL(serverURL, subdomain string) string {
 	scheme := "http"
-	if strings.HasPrefix(c.config.ServerURL, "wss://") {
+	if strings.HasPrefix(serverURL, "wss://") {
 		scheme = "https"
 	}
 
-	host := strings.TrimPrefix(c.config.ServerURL, "ws://")
+	host := strings.TrimPrefix(serverURL, "ws://")
 	host = strings.TrimPrefix(host, "wss://")
 	host = strings.TrimSuffix(host, "/tunnel")
 
@@ -140,7 +151,7 @@ func (c *Client) URL() string {
 	}
 
 	if port != "" {
-		return fmt.Sprintf("%s://%s.%s:%s/", scheme, c.config.Subdomain, host, port)
+		return fmt.Sprintf("%s://%s.%s:%s/", scheme, subdomain, host, port)
 	}
-	return fmt.Sprintf("%s://%s.%s/", scheme, c.config.Subdomain, host)
+	return fmt.Sprintf("%s://%s.%s/", scheme, subdomain, host)
 }
