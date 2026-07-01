@@ -28,6 +28,32 @@ func DefaultSocketPath() string {
 }
 
 // DefaultLogPath returns the default supervisor log file path.
+func buildPublicURL(serverURL, subdomain string) string {
+	scheme := "http"
+	if strings.HasPrefix(serverURL, "wss://") {
+		scheme = "https"
+	}
+
+	host := strings.TrimPrefix(serverURL, "ws://")
+	host = strings.TrimPrefix(host, "wss://")
+	host = strings.TrimSuffix(host, "/tunnel")
+
+	port := ""
+	h, p, err := net.SplitHostPort(host)
+	if err == nil {
+		host = h
+		port = p
+		if (scheme == "http" && port == "80") || (scheme == "https" && port == "443") {
+			port = ""
+		}
+	}
+
+	if port != "" {
+		return fmt.Sprintf("%s://%s.%s:%s/", scheme, subdomain, host, port)
+	}
+	return fmt.Sprintf("%s://%s.%s/", scheme, subdomain, host)
+}
+
 func DefaultLogPath() string {
 	cacheDir := os.Getenv("XDG_CACHE_HOME")
 	if cacheDir == "" {
@@ -139,15 +165,17 @@ func (s *Supervisor) handleList(w http.ResponseWriter, r *http.Request) {
 	s.mu.RLock()
 	out := make([]map[string]interface{}, 0, len(s.tunnels))
 	for _, t := range s.tunnels {
+		url := t.URL
+		if url == "" {
+			url = buildPublicURL(t.Config.ServerURL, t.Config.Subdomain)
+		}
 		out = append(out, map[string]interface{}{
-			"id":        t.ID,
-			"server":    t.Config.ServerURL,
-			"subdomain": t.Config.Subdomain,
-			"local":     fmt.Sprintf("%s:%d", t.Config.TargetHost, t.Config.LocalPort),
-			"status":    t.Status,
-			"url":       t.URL,
-			"since":     t.Since.Format(time.RFC3339),
-			"last_err":  t.LastErr,
+			"id":       t.ID,
+			"local":    fmt.Sprintf("%s:%d", t.Config.TargetHost, t.Config.LocalPort),
+			"status":   t.Status,
+			"url":      url,
+			"since":    t.Since.Format(time.RFC3339),
+			"last_err": t.LastErr,
 		})
 	}
 	s.mu.RUnlock()
@@ -161,24 +189,37 @@ func (s *Supervisor) handleKill(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	id := r.URL.Query().Get("id")
-	if id == "" {
+	prefix := r.URL.Query().Get("id")
+	if prefix == "" {
 		http.Error(w, "missing id", http.StatusBadRequest)
 		return
 	}
 
 	s.mu.Lock()
-	inst, ok := s.tunnels[id]
-	if ok {
-		inst.cancel()
-		delete(s.tunnels, id)
+	var matches []string
+	for id := range s.tunnels {
+		if strings.HasPrefix(id, prefix) {
+			matches = append(matches, id)
+		}
 	}
-	s.mu.Unlock()
 
-	if !ok {
+	if len(matches) == 0 {
+		s.mu.Unlock()
 		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
+	if len(matches) > 1 {
+		s.mu.Unlock()
+		http.Error(w, fmt.Sprintf("ambiguous id %q (matches: %s)", prefix, strings.Join(matches, ", ")), http.StatusConflict)
+		return
+	}
+
+	id := matches[0]
+	inst := s.tunnels[id]
+	inst.cancel()
+	delete(s.tunnels, id)
+	s.mu.Unlock()
+
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]string{"id": id, "status": "killed"})
 }
