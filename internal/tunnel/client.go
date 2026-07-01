@@ -28,8 +28,9 @@ type Client struct {
 
 // New builds a configured chisel client ready to start.
 func New(cfg *config.Config, token, remote, fingerprint, mode string, serverPort int) (*Client, error) {
-	serverHost := strings.TrimPrefix(cfg.ServerURL, "ws://")
-	serverHost = strings.TrimPrefix(serverHost, "wss://")
+	serverHost := cfg.ServerURL
+	serverHost = strings.Replace(serverHost, "wss://", "https://", 1)
+	serverHost = strings.Replace(serverHost, "ws://", "http://", 1)
 
 	ccfg := &chclient.Config{
 		Server:      serverHost,

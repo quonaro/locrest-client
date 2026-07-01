@@ -1,6 +1,7 @@
 package tunnel
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -93,5 +94,53 @@ func TestURLTCPStripsPort(t *testing.T) {
 	got := c.URL()
 	if strings.Contains(got, ":8443") {
 		t.Fatalf("URL() should strip server port, got %q", got)
+	}
+}
+
+func TestNewPreservesWSSScheme(t *testing.T) {
+	cfg := &config.Config{
+		ServerURL:  "wss://example.com/tunnel",
+		Subdomain:  "sub",
+		LocalPort:  8080,
+		TargetHost: "localhost",
+	}
+	c, err := New(cfg, "token", "R:20000:localhost:8080", "fp", "http", 20000)
+	if err != nil {
+		t.Fatalf("New() error: %v", err)
+	}
+	v := reflect.ValueOf(c.inner).Elem().FieldByName("server")
+	if !v.IsValid() {
+		t.Fatalf("inner chisel client has no 'server' field")
+	}
+	got := v.String()
+	if !strings.HasPrefix(got, "wss://") {
+		t.Fatalf("chisel server URL should use wss://, got %q", got)
+	}
+	if !strings.Contains(got, ":443") {
+		t.Fatalf("chisel server URL should include TLS port 443, got %q", got)
+	}
+}
+
+func TestNewPreservesPlainWS(t *testing.T) {
+	cfg := &config.Config{
+		ServerURL:  "ws://example.com:8080/tunnel",
+		Subdomain:  "sub",
+		LocalPort:  8080,
+		TargetHost: "localhost",
+	}
+	c, err := New(cfg, "token", "R:20000:localhost:8080", "fp", "http", 20000)
+	if err != nil {
+		t.Fatalf("New() error: %v", err)
+	}
+	v := reflect.ValueOf(c.inner).Elem().FieldByName("server")
+	if !v.IsValid() {
+		t.Fatalf("inner chisel client has no 'server' field")
+	}
+	got := v.String()
+	if !strings.HasPrefix(got, "ws://") {
+		t.Fatalf("chisel server URL should use ws://, got %q", got)
+	}
+	if strings.Contains(got, ":443") {
+		t.Fatalf("chisel server URL should not include TLS port 443, got %q", got)
 	}
 }
