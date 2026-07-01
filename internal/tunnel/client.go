@@ -83,10 +83,10 @@ func (c *Client) StartHeartbeat(ctx context.Context, pubKey, apiBase string) {
 			if err != nil {
 				continue
 			}
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if resp.StatusCode == http.StatusUnauthorized {
 				c.closing.Store(true)
-				c.inner.Close()
+				_ = c.inner.Close()
 				return
 			}
 		}
@@ -104,7 +104,7 @@ func (c *Client) Wait() error {
 
 // Close shuts down the tunnel connection.
 func (c *Client) Close() {
-	c.inner.Close()
+	_ = c.inner.Close()
 }
 
 // URL constructs the public tunnel URL or TCP destination from the server address.

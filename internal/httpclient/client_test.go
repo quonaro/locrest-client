@@ -13,7 +13,7 @@ func TestGetSuccess(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Fatalf("method = %q", r.Method)
 		}
-		w.Write([]byte("hello"))
+		_, _ = w.Write([]byte("hello"))
 	}))
 	defer srv.Close()
 
@@ -59,7 +59,7 @@ func TestPostSuccess(t *testing.T) {
 		}
 		body := make([]byte, r.ContentLength)
 		_, _ = r.Body.Read(body)
-		w.Write(body)
+		_, _ = w.Write(body)
 	}))
 	defer srv.Close()
 
@@ -75,7 +75,7 @@ func TestPostSuccess(t *testing.T) {
 func TestPostError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("boom"))
+		_, _ = w.Write([]byte("boom"))
 	}))
 	defer srv.Close()
 

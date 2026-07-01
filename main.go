@@ -49,16 +49,16 @@ func main() {
 	var logBuf bytes.Buffer
 	logDone := make(chan struct{})
 	go func() {
-		io.Copy(&logBuf, pr)
+		_, _ = io.Copy(&logBuf, pr)
 		close(logDone)
 	}()
 
 	c, err := tunnel.New(cfg, res.Token, res.Remote, res.Fingerprint, res.Mode, res.ServerPort)
 	if err != nil {
-		pw.Close()
+		_ = pw.Close()
 		<-logDone
 		log.SetOutput(oldLogWriter)
-		oldStderr.Write(logBuf.Bytes())
+		_, _ = oldStderr.Write(logBuf.Bytes())
 		output.Fatal("tunnel init failed: %v", err)
 	}
 
@@ -74,10 +74,10 @@ func main() {
 	}()
 
 	if err := c.Start(ctx); err != nil {
-		pw.Close()
+		_ = pw.Close()
 		<-logDone
 		log.SetOutput(oldLogWriter)
-		oldStderr.Write(logBuf.Bytes())
+		_, _ = oldStderr.Write(logBuf.Bytes())
 		output.Fatal("tunnel start failed: %v", err)
 	}
 
@@ -86,10 +86,10 @@ func main() {
 	}
 
 	// Flush captured logs underneath the banner.
-	pw.Close()
+	_ = pw.Close()
 	<-logDone
 	log.SetOutput(oldLogWriter)
-	oldStderr.Write(logBuf.Bytes())
+	_, _ = oldStderr.Write(logBuf.Bytes())
 
 	go c.StartHeartbeat(ctx, res.PubKey, res.APIBase)
 

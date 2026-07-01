@@ -20,7 +20,7 @@ func runTestServer(t *testing.T) *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
 		case r.URL.Path == "/register" && r.Method == http.MethodPost:
-			w.Write([]byte(`{"ok":true}`))
+			_, _ = w.Write([]byte(`{"ok":true}`))
 		case r.URL.Path == "/challenge" && r.Method == http.MethodGet:
 			pub := r.URL.Query().Get("pubkey")
 			_ = pub
@@ -29,7 +29,7 @@ func runTestServer(t *testing.T) *httptest.Server {
 				"subdomain":   "sub",
 				"server_port": 30001,
 			})
-			w.Write(resp)
+			_, _ = w.Write(resp)
 		case r.URL.Path == "/verify" && r.Method == http.MethodPost:
 			resp, _ := json.Marshal(map[string]any{
 				"token":       "chiseltoken",
@@ -41,7 +41,7 @@ func runTestServer(t *testing.T) *httptest.Server {
 				"authorized":  true,
 				"username":    "alice",
 			})
-			w.Write(resp)
+			_, _ = w.Write(resp)
 		default:
 			http.Error(w, "not found", http.StatusNotFound)
 		}

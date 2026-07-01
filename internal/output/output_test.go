@@ -34,12 +34,12 @@ func TestPrintBanner(t *testing.T) {
 	done := make(chan string)
 	go func() {
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		done <- buf.String()
 	}()
 
 	PrintBanner("https://sub.example.com/", "localhost", 8080, time.Hour, "http", "user:pass", "alice")
-	w.Close()
+	_ = w.Close()
 	out := <-done
 
 	for _, want := range []string{
@@ -65,12 +65,12 @@ func TestPrintBannerTCP(t *testing.T) {
 	done := make(chan string)
 	go func() {
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		done <- buf.String()
 	}()
 
 	PrintBanner("example.com:30001", "localhost", 8080, 0, "tcp", "", "")
-	w.Close()
+	_ = w.Close()
 	out := <-done
 
 	if !strings.Contains(out, "Dest:") {
@@ -81,10 +81,10 @@ func TestPrintBannerTCP(t *testing.T) {
 func TestSuppressWriter(t *testing.T) {
 	var buf bytes.Buffer
 	sw := NewSuppressWriter(&buf, "noise", "ignore")
-	sw.Write([]byte("keep this\n"))
-	sw.Write([]byte("noise line\n"))
-	sw.Write([]byte("also ignore this\n"))
-	sw.Write([]byte("keep that\n"))
+	_, _ = sw.Write([]byte("keep this\n"))
+	_, _ = sw.Write([]byte("noise line\n"))
+	_, _ = sw.Write([]byte("also ignore this\n"))
+	_, _ = sw.Write([]byte("keep that\n"))
 
 	out := buf.String()
 	if !strings.Contains(out, "keep this") {
@@ -104,9 +104,9 @@ func TestSuppressWriter(t *testing.T) {
 func TestSuppressWriterPartial(t *testing.T) {
 	var buf bytes.Buffer
 	sw := NewSuppressWriter(&buf, "drop")
-	sw.Write([]byte("hello "))
-	sw.Write([]byte("drop me\n"))
-	sw.Write([]byte("world\n"))
+	_, _ = sw.Write([]byte("hello "))
+	_, _ = sw.Write([]byte("drop me\n"))
+	_, _ = sw.Write([]byte("world\n"))
 
 	out := buf.String()
 	if strings.Contains(out, "drop") {

@@ -68,7 +68,7 @@ func Parse() (*Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("read keyfile: %w", err)
 		}
-		os.Remove(cfg.KeyFile) // burn after reading
+		_ = os.Remove(cfg.KeyFile) // burn after reading
 		cfg.PrivKeyHex = strings.TrimSpace(string(b))
 	}
 	if cfg.PrivKeyHex == "" {

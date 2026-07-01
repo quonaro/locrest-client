@@ -57,23 +57,23 @@ const (
 
 // PrintBanner renders the tunnel activation banner.
 func PrintBanner(url, targetHost string, localPort int, tokenTTL time.Duration, mode, httpAuth string, username string) {
-	fmt.Fprintln(osStdout)
-	fmt.Fprintf(osStdout, "%sLOCREST TUNNEL ACTIVE%s\n", ansiBoldGreen, ansiReset)
+	_, _ = fmt.Fprintln(osStdout)
+	_, _ = fmt.Fprintf(osStdout, "%sLOCREST TUNNEL ACTIVE%s\n", ansiBoldGreen, ansiReset)
 	if mode == "tcp" {
-		fmt.Fprintf(osStdout, "%sDest:   %s%s%s\n", ansiDim, ansiBoldCyan, url, ansiReset)
+		_, _ = fmt.Fprintf(osStdout, "%sDest:   %s%s%s\n", ansiDim, ansiBoldCyan, url, ansiReset)
 	} else {
-		fmt.Fprintf(osStdout, "%sURL:    %s%s%s\n", ansiDim, ansiBoldCyan, url, ansiReset)
+		_, _ = fmt.Fprintf(osStdout, "%sURL:    %s%s%s\n", ansiDim, ansiBoldCyan, url, ansiReset)
 	}
 	if httpAuth != "" {
-		fmt.Fprintf(osStdout, "%sAuth:   %s%s%s\n", ansiDim, ansiBoldCyan, httpAuth, ansiReset)
+		_, _ = fmt.Fprintf(osStdout, "%sAuth:   %s%s%s\n", ansiDim, ansiBoldCyan, httpAuth, ansiReset)
 	}
-	fmt.Fprintf(osStdout, "%sSource: %s%s:%d%s\n", ansiDim, ansiBoldCyan, targetHost, localPort, ansiReset)
-	fmt.Fprintf(osStdout, "%sTTL:    %s%s%s\n", ansiDim, ansiBoldCyan, formatTTL(tokenTTL), ansiReset)
+	_, _ = fmt.Fprintf(osStdout, "%sSource: %s%s:%d%s\n", ansiDim, ansiBoldCyan, targetHost, localPort, ansiReset)
+	_, _ = fmt.Fprintf(osStdout, "%sTTL:    %s%s%s\n", ansiDim, ansiBoldCyan, formatTTL(tokenTTL), ansiReset)
 	if username != "" {
-		fmt.Fprintf(osStdout, "%sUser:   %s%s%s\n", ansiDim, ansiBoldCyan, username, ansiReset)
+		_, _ = fmt.Fprintf(osStdout, "%sUser:   %s%s%s\n", ansiDim, ansiBoldCyan, username, ansiReset)
 	}
-	fmt.Fprintf(osStdout, "%sPress Ctrl+C to stop%s\n", ansiBoldRed, ansiReset)
-	fmt.Fprintln(osStdout)
+	_, _ = fmt.Fprintf(osStdout, "%sPress Ctrl+C to stop%s\n", ansiBoldRed, ansiReset)
+	_, _ = fmt.Fprintln(osStdout)
 }
 
 // SuppressWriter filters log lines containing any of the configured substrings.

@@ -56,9 +56,9 @@ func TestParseEnvSubdomain(t *testing.T) {
 	oldEnv := os.Getenv("LOCREST_SUBDOMAIN")
 	defer func() {
 		os.Args = oldArgs
-		os.Setenv("LOCREST_SUBDOMAIN", oldEnv)
+		_ = os.Setenv("LOCREST_SUBDOMAIN", oldEnv)
 	}()
-	os.Setenv("LOCREST_SUBDOMAIN", "envsub")
+	_ = os.Setenv("LOCREST_SUBDOMAIN", "envsub")
 	os.Args = []string{"test", "-server", "wss://example.com/tunnel", "-port", "8080", "-key", "aabbcc"}
 	cfg, err := Parse()
 	if err != nil {
@@ -99,9 +99,9 @@ func TestParseSetupTokenEnv(t *testing.T) {
 	oldEnv := os.Getenv("LOCREST_SETUP_TOKEN")
 	defer func() {
 		os.Args = oldArgs
-		os.Setenv("LOCREST_SETUP_TOKEN", oldEnv)
+		_ = os.Setenv("LOCREST_SETUP_TOKEN", oldEnv)
 	}()
-	os.Setenv("LOCREST_SETUP_TOKEN", "tok123")
+	_ = os.Setenv("LOCREST_SETUP_TOKEN", "tok123")
 	os.Args = []string{"test", "-server", "wss://example.com/tunnel", "-port", "8080", "-subdomain", "sub"}
 	cfg, err := Parse()
 	if err != nil {
