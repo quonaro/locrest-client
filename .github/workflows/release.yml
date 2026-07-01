@@ -50,6 +50,7 @@ jobs:
           (cd dist && sha256sum "${asset}" > "${asset}.sha256")
         done
         (cd dist && find . -maxdepth 1 -type f -name 'lrc-*' ! -name '*.sha256' -exec sha256sum {} \; > checksums.txt)
+        echo "${{ github.ref_name }}" > dist/version.txt
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
