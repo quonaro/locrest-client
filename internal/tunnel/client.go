@@ -33,12 +33,14 @@ func New(cfg *config.Config, token, remote, fingerprint, mode string, serverPort
 	serverHost = strings.Replace(serverHost, "ws://", "http://", 1)
 
 	ccfg := &chclient.Config{
-		Server:      serverHost,
-		Auth:        fmt.Sprintf("%s:%s", cfg.Subdomain, token),
-		Remotes:     []string{remote},
-		KeepAlive:   25 * time.Second,
-		Fingerprint: fingerprint,
-		TLS:         chclient.TLSConfig{SkipVerify: cfg.Insecure},
+		Server:           serverHost,
+		Auth:             fmt.Sprintf("%s:%s", cfg.Subdomain, token),
+		Remotes:          []string{remote},
+		KeepAlive:        25 * time.Second,
+		Fingerprint:      fingerprint,
+		TLS:              chclient.TLSConfig{SkipVerify: cfg.Insecure},
+		MaxRetryCount:    -1,
+		MaxRetryInterval: 5 * time.Minute,
 	}
 
 	if cfg.Debug {

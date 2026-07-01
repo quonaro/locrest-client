@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"locrest-client/internal/config"
 )
@@ -142,5 +143,30 @@ func TestNewPreservesPlainWS(t *testing.T) {
 	}
 	if strings.Contains(got, ":443") {
 		t.Fatalf("chisel server URL should not include TLS port 443, got %q", got)
+	}
+}
+
+func TestNewEnablesInfiniteReconnect(t *testing.T) {
+	cfg := &config.Config{
+		ServerURL:  "wss://example.com/tunnel",
+		Subdomain:  "sub",
+		LocalPort:  8080,
+		TargetHost: "localhost",
+	}
+	c, err := New(cfg, "token", "R:20000:localhost:8080", "fp", "http", 20000)
+	if err != nil {
+		t.Fatalf("New() error: %v", err)
+	}
+	v := reflect.ValueOf(c.inner).Elem().FieldByName("config")
+	if !v.IsValid() {
+		t.Fatalf("inner chisel client has no 'config' field")
+	}
+	maxRetry := int(v.Elem().FieldByName("MaxRetryCount").Int())
+	if maxRetry != -1 {
+		t.Fatalf("MaxRetryCount = %d, want -1", maxRetry)
+	}
+	maxInterval := time.Duration(v.Elem().FieldByName("MaxRetryInterval").Int())
+	if maxInterval != 5*time.Minute {
+		t.Fatalf("MaxRetryInterval = %v, want 5m", maxInterval)
 	}
 }
