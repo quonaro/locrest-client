@@ -12,6 +12,8 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -63,19 +65,39 @@ func runCommand(cfg *config.Config) {
 
 	if !client.Ping() {
 		output.Debug("supervisor not running, auto-starting")
-		cmd := exec.Command(os.Args[0], "-supervisor")
+		exe, err := os.Executable()
+		if err != nil {
+			output.Fatal("failed to locate executable: %v", err)
+		}
+		logPath := supervisor.DefaultLogPath()
+		_ = os.MkdirAll(filepath.Dir(logPath), 0755)
+		logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+		if err != nil {
+			output.Fatal("failed to open supervisor log: %v", err)
+		}
+		cmd := exec.Command(exe, "-supervisor")
 		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		cmd.Stdout = logFile
+		cmd.Stderr = logFile
+		cmd.Stdin = nil
 		if err := cmd.Start(); err != nil {
+			_ = logFile.Close()
 			output.Fatal("failed to start supervisor: %v", err)
 		}
-		for i := 0; i < 50; i++ {
+		_ = logFile.Close()
+		go func() { _ = cmd.Wait() }()
+
+		started := false
+		for i := 0; i < 100; i++ {
 			if client.Ping() {
+				started = true
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
-		if !client.Ping() {
-			output.Fatal("supervisor did not start in time")
+		if !started {
+			logTail := tailLog(logPath, 5)
+			output.Fatal("supervisor did not start in time\n--- supervisor log tail ---\n%s", logTail)
 		}
 		output.Debug("supervisor started")
 	}
@@ -222,4 +244,16 @@ func runLegacy(cfg *config.Config) {
 		fmt.Fprintf(os.Stderr, "tunnel error: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func tailLog(path string, n int) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "(log file not readable: " + err.Error() + ")"
+	}
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	if len(lines) > n {
+		lines = lines[len(lines)-n:]
+	}
+	return strings.Join(lines, "\n")
 }
