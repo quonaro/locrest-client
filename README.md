@@ -98,7 +98,7 @@ The tunnel ID is a 16-character hex prefix of `SHA256(server + subdomain + port)
 
 | Path | Description |
 |------|-------------|
-| `~/.cache/locrest/control.sock` | Unix socket for supervisor communication |
+| `~/.cache/locrest/lrsv.sock` | Unix socket for supervisor communication |
 | `~/.cache/locrest/supervisor.log` | Supervisor and tunnel logs |
 | `~/.cache/locrest/` | Downloaded client binaries |
 

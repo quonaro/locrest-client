@@ -27,6 +27,7 @@ type Config struct {
 	Supervisor  bool
 	Command     string
 	TargetID    string
+	Help        bool
 }
 
 // Parse reads command-line flags and validates required fields.
@@ -50,7 +51,7 @@ func Parse() (*Config, error) {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s -server <url> -port <n> -subdomain <name> [-key <hex> | -keyfile <path> | LOCREST_KEY=... | -setup-token <token>] [options]\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "   or: %s <command> [options]\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "Commands: add, list, kill <id>, status <id>, logs <id>\n")
+		fmt.Fprintf(os.Stderr, "Commands: add, list, kill <id>, status <id>, logs <id>, help\n")
 		fmt.Fprintln(os.Stderr, "Options:")
 		flag.PrintDefaults()
 	}
@@ -58,9 +59,19 @@ func Parse() (*Config, error) {
 	flag.Parse()
 	output.Debug("flags parsed")
 
+	// No arguments at all → print help.
+	if len(os.Args) == 1 {
+		cfg.Help = true
+		return &cfg, nil
+	}
+
 	// Detect subcommand mode.
 	if len(os.Args) > 1 && !strings.HasPrefix(os.Args[1], "-") {
 		cfg.Command = os.Args[1]
+		if cfg.Command == "help" {
+			cfg.Help = true
+			return &cfg, nil
+		}
 		if len(os.Args) > 2 && !strings.HasPrefix(os.Args[2], "-") {
 			cfg.TargetID = os.Args[2]
 		}

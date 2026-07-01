@@ -26,7 +26,7 @@ func TestDefaultSocketPath(t *testing.T) {
 	defer func() { _ = os.Setenv("HOME", oldHome) }()
 
 	got := DefaultSocketPath()
-	want := "/home/testuser/.cache/locrest/control.sock"
+	want := "/home/testuser/.cache/locrest/lrsv.sock"
 	if got != want {
 		t.Fatalf("DefaultSocketPath() = %q, want %q", got, want)
 	}

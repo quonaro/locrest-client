@@ -4,13 +4,16 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"lrc/internal/auth"
 	"lrc/internal/config"
@@ -26,10 +29,16 @@ func main() {
 		output.Fatal("configuration error: %v", err)
 	}
 
+	if cfg.Help {
+		flag.Usage()
+		os.Exit(0)
+	}
+
 	output.SetDebug(cfg.Debug)
 
 	// Supervisor mode.
 	if cfg.Supervisor {
+		signal.Ignore(syscall.SIGHUP)
 		output.Debug("starting supervisor")
 		s := supervisor.NewSupervisor(supervisor.DefaultSocketPath())
 		if err := s.Run(); err != nil {
@@ -51,6 +60,25 @@ func main() {
 
 func runCommand(cfg *config.Config) {
 	client := supervisor.NewClient(supervisor.DefaultSocketPath())
+
+	if !client.Ping() {
+		output.Debug("supervisor not running, auto-starting")
+		cmd := exec.Command(os.Args[0], "-supervisor")
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		if err := cmd.Start(); err != nil {
+			output.Fatal("failed to start supervisor: %v", err)
+		}
+		for i := 0; i < 50; i++ {
+			if client.Ping() {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		if !client.Ping() {
+			output.Fatal("supervisor did not start in time")
+		}
+		output.Debug("supervisor started")
+	}
 
 	switch cfg.Command {
 	case "add":
@@ -100,7 +128,9 @@ func runCommand(cfg *config.Config) {
 			fmt.Println(line)
 		}
 	default:
-		output.Fatal("unknown command: %s", cfg.Command)
+		fmt.Fprintf(os.Stderr, "unknown command: %s\n\n", cfg.Command)
+		flag.Usage()
+		os.Exit(1)
 	}
 }
 

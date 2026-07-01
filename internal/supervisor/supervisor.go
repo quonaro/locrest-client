@@ -24,7 +24,7 @@ func DefaultSocketPath() string {
 	if cacheDir == "" {
 		cacheDir = filepath.Join(os.Getenv("HOME"), ".cache")
 	}
-	return filepath.Join(cacheDir, "locrest", "control.sock")
+	return filepath.Join(cacheDir, "locrest", "lrsv.sock")
 }
 
 // DefaultLogPath returns the default supervisor log file path.

@@ -18,8 +18,12 @@ func TestParseRequired(t *testing.T) {
 	defer func() { os.Args = oldArgs }()
 
 	os.Args = []string{"test"}
-	if _, err := Parse(); err == nil {
-		t.Fatal("expected error for missing flags")
+	cfg, err := Parse()
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if !cfg.Help {
+		t.Fatal("expected Help=true for missing flags")
 	}
 }
 
@@ -228,5 +232,35 @@ func TestParseSubcommandKill(t *testing.T) {
 	}
 	if cfg.TargetID != "abc123" {
 		t.Fatalf("TargetID = %q, want abc123", cfg.TargetID)
+	}
+}
+
+func TestParseNoArgsShowsHelp(t *testing.T) {
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+
+	os.Args = []string{"test"}
+	cfg, err := Parse()
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if !cfg.Help {
+		t.Fatal("expected Help=true for no args")
+	}
+}
+
+func TestParseHelpSubcommand(t *testing.T) {
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+
+	os.Args = []string{"test", "help"}
+	cfg, err := Parse()
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if !cfg.Help {
+		t.Fatal("expected Help=true for help subcommand")
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"strings"
 )
 
 // Client talks to the supervisor over a Unix socket.
@@ -48,7 +49,7 @@ func (c *Client) Start(cfg interface{}) (map[string]interface{}, error) {
 	}
 	resp, err := c.http.Post("http://unix/start", "application/json", bytes.NewReader(body))
 	if err != nil {
-		return nil, err
+		return nil, wrapDialErr(err, c.socket)
 	}
 	defer func() { _ = resp.Body.Close() }()
 	data, err := decodeJSON(resp)
@@ -66,7 +67,7 @@ func (c *Client) Start(cfg interface{}) (map[string]interface{}, error) {
 func (c *Client) List() ([]map[string]interface{}, error) {
 	resp, err := c.http.Get("http://unix/list")
 	if err != nil {
-		return nil, err
+		return nil, wrapDialErr(err, c.socket)
 	}
 	defer func() { _ = resp.Body.Close() }()
 	data, err := decodeJSON(resp)
@@ -92,7 +93,7 @@ func (c *Client) List() ([]map[string]interface{}, error) {
 func (c *Client) Kill(id string) (map[string]interface{}, error) {
 	resp, err := c.http.Post(fmt.Sprintf("http://unix/kill?id=%s", id), "", nil)
 	if err != nil {
-		return nil, err
+		return nil, wrapDialErr(err, c.socket)
 	}
 	defer func() { _ = resp.Body.Close() }()
 	data, err := decodeJSON(resp)
@@ -110,7 +111,7 @@ func (c *Client) Kill(id string) (map[string]interface{}, error) {
 func (c *Client) Status(id string) (map[string]interface{}, error) {
 	resp, err := c.http.Get(fmt.Sprintf("http://unix/status?id=%s", id))
 	if err != nil {
-		return nil, err
+		return nil, wrapDialErr(err, c.socket)
 	}
 	defer func() { _ = resp.Body.Close() }()
 	data, err := decodeJSON(resp)
@@ -128,7 +129,7 @@ func (c *Client) Status(id string) (map[string]interface{}, error) {
 func (c *Client) Logs(id string) ([]string, error) {
 	resp, err := c.http.Get(fmt.Sprintf("http://unix/logs?id=%s", id))
 	if err != nil {
-		return nil, err
+		return nil, wrapDialErr(err, c.socket)
 	}
 	defer func() { _ = resp.Body.Close() }()
 	data, err := decodeJSON(resp)
@@ -160,4 +161,15 @@ func decodeJSON(resp *http.Response) (interface{}, error) {
 		return nil, err
 	}
 	return v, nil
+}
+
+func wrapDialErr(err error, socket string) error {
+	if err == nil {
+		return nil
+	}
+	msg := err.Error()
+	if strings.Contains(msg, "no such file") || strings.Contains(msg, "connection refused") {
+		return fmt.Errorf("supervisor is not running (socket: %s)", socket)
+	}
+	return err
 }
