@@ -30,6 +30,7 @@ type verifyResp struct {
 	Token       string `json:"token"`
 	ServerPort  int    `json:"server_port"`
 	Remote      string `json:"remote"`
+	RemoteUDP   string `json:"remote_udp,omitempty"`
 	Fingerprint string `json:"fingerprint"`
 	Mode        string `json:"mode"`
 	HTTPAuth    string `json:"http_auth"`
@@ -42,6 +43,7 @@ type Result struct {
 	Token       string
 	ServerPort  int
 	Remote      string
+	RemoteUDP   string
 	Fingerprint string
 	PubKey      string
 	APIBase     string
@@ -133,6 +135,7 @@ func Run(cfg *config.Config) (*Result, error) {
 		Token:       vResp.Token,
 		ServerPort:  vResp.ServerPort,
 		Remote:      vResp.Remote,
+		RemoteUDP:   vResp.RemoteUDP,
 		Fingerprint: vResp.Fingerprint,
 		PubKey:      pubHex,
 		APIBase:     apiBase,

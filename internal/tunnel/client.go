@@ -27,7 +27,7 @@ type Client struct {
 }
 
 // New builds a configured chisel client ready to start.
-func New(cfg *config.Config, token, remote, fingerprint, mode string, serverPort int) (*Client, error) {
+func New(cfg *config.Config, token string, remotes []string, fingerprint, mode string, serverPort int) (*Client, error) {
 	serverHost := cfg.ServerURL
 	serverHost = strings.Replace(serverHost, "wss://", "https://", 1)
 	serverHost = strings.Replace(serverHost, "ws://", "http://", 1)
@@ -35,7 +35,7 @@ func New(cfg *config.Config, token, remote, fingerprint, mode string, serverPort
 	ccfg := &chclient.Config{
 		Server:           serverHost,
 		Auth:             fmt.Sprintf("%s:%s", cfg.Subdomain, token),
-		Remotes:          []string{remote},
+		Remotes:          remotes,
 		KeepAlive:        25 * time.Second,
 		Fingerprint:      fingerprint,
 		TLS:              chclient.TLSConfig{SkipVerify: cfg.Insecure},
@@ -112,7 +112,7 @@ func (c *Client) Close() {
 
 // URL constructs the public tunnel URL or TCP destination from the server address.
 func (c *Client) URL() string {
-	if c.mode == "tcp" {
+	if c.mode == "tcp" || c.mode == "tcp/udp" {
 		host := strings.TrimPrefix(c.config.ServerURL, "ws://")
 		host = strings.TrimPrefix(host, "wss://")
 		host = strings.TrimSuffix(host, "/tunnel")
@@ -127,7 +127,7 @@ func (c *Client) URL() string {
 
 // InsecureURL returns the plain-HTTP public tunnel URL when an insecure server URL is configured.
 func (c *Client) InsecureURL() string {
-	if c.config.InsecureURL == "" || c.mode == "tcp" {
+	if c.config.InsecureURL == "" || c.mode == "tcp" || c.mode == "tcp/udp" {
 		return ""
 	}
 	return buildPublicURL(c.config.InsecureURL, c.config.Subdomain)

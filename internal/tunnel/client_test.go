@@ -98,6 +98,21 @@ func TestURLTCPStripsPort(t *testing.T) {
 	}
 }
 
+func TestURLTCPUDP(t *testing.T) {
+	cfg := &config.Config{
+		ServerURL:  "wss://example.com:8443/tunnel",
+		Subdomain:  "sub",
+		LocalPort:  8080,
+		TargetHost: "localhost",
+	}
+	c := &Client{config: cfg, mode: "tcp/udp", serverPort: 30001}
+	got := c.URL()
+	want := "example.com:30001"
+	if got != want {
+		t.Fatalf("URL() = %q, want %q", got, want)
+	}
+}
+
 func TestNewPreservesWSSScheme(t *testing.T) {
 	cfg := &config.Config{
 		ServerURL:  "wss://example.com/tunnel",
@@ -105,7 +120,7 @@ func TestNewPreservesWSSScheme(t *testing.T) {
 		LocalPort:  8080,
 		TargetHost: "localhost",
 	}
-	c, err := New(cfg, "token", "R:20000:localhost:8080", "fp", "http", 20000)
+	c, err := New(cfg, "token", []string{"R:20000:localhost:8080"}, "fp", "http", 20000)
 	if err != nil {
 		t.Fatalf("New() error: %v", err)
 	}
@@ -129,7 +144,7 @@ func TestNewPreservesPlainWS(t *testing.T) {
 		LocalPort:  8080,
 		TargetHost: "localhost",
 	}
-	c, err := New(cfg, "token", "R:20000:localhost:8080", "fp", "http", 20000)
+	c, err := New(cfg, "token", []string{"R:20000:localhost:8080"}, "fp", "http", 20000)
 	if err != nil {
 		t.Fatalf("New() error: %v", err)
 	}
@@ -153,7 +168,7 @@ func TestNewEnablesInfiniteReconnect(t *testing.T) {
 		LocalPort:  8080,
 		TargetHost: "localhost",
 	}
-	c, err := New(cfg, "token", "R:20000:localhost:8080", "fp", "http", 20000)
+	c, err := New(cfg, "token", []string{"R:20000:localhost:8080"}, "fp", "http", 20000)
 	if err != nil {
 		t.Fatalf("New() error: %v", err)
 	}

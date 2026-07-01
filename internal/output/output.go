@@ -59,8 +59,11 @@ const (
 func PrintBanner(url, insecureURL, targetHost string, localPort int, tokenTTL time.Duration, mode, httpAuth string, username string) {
 	_, _ = fmt.Fprintln(osStdout)
 	_, _ = fmt.Fprintf(osStdout, "%sLOCREST TUNNEL ACTIVE%s\n", ansiBoldGreen, ansiReset)
-	if mode == "tcp" {
+	if mode == "tcp" || mode == "tcp/udp" {
 		_, _ = fmt.Fprintf(osStdout, "%sDest:   %s%s%s\n", ansiDim, ansiBoldCyan, url, ansiReset)
+		if mode == "tcp/udp" {
+			_, _ = fmt.Fprintf(osStdout, "%sProto:  %sTCP + UDP%s\n", ansiDim, ansiBoldCyan, ansiReset)
+		}
 	} else {
 		_, _ = fmt.Fprintf(osStdout, "%sURL:    %s%s%s\n", ansiDim, ansiBoldCyan, url, ansiReset)
 	}

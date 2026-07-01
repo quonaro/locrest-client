@@ -53,7 +53,11 @@ func main() {
 		close(logDone)
 	}()
 
-	c, err := tunnel.New(cfg, res.Token, res.Remote, res.Fingerprint, res.Mode, res.ServerPort)
+	remotes := []string{res.Remote}
+	if res.RemoteUDP != "" {
+		remotes = append(remotes, res.RemoteUDP)
+	}
+	c, err := tunnel.New(cfg, res.Token, remotes, res.Fingerprint, res.Mode, res.ServerPort)
 	if err != nil {
 		_ = pw.Close()
 		<-logDone
