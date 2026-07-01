@@ -239,6 +239,7 @@ func runLegacy(cfg *config.Config) {
 	go func() {
 		client := supervisor.NewClient(supervisor.DefaultSocketPath())
 		ensureSupervisor(client)
+		cfg.External = true
 		_, _ = client.Start(cfg)
 	}()
 

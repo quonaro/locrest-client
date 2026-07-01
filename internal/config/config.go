@@ -28,6 +28,7 @@ type Config struct {
 	Command     string
 	TargetID    string
 	Help        bool
+	External    bool // true when tunnel is managed outside supervisor (foreground mode)
 }
 
 // Parse reads command-line flags and validates required fields.

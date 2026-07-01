@@ -125,7 +125,11 @@ func (s *Supervisor) handleStart(w http.ResponseWriter, r *http.Request) {
 	s.tunnels[id] = inst
 	s.mu.Unlock()
 
-	go RunTunnel(ctx, inst)
+	if !cfg.External {
+		go RunTunnel(ctx, inst)
+	} else {
+		inst.Status = statusRunning
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]string{"id": id, "status": "started"})
