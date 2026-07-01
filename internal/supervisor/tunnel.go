@@ -14,6 +14,7 @@ import (
 // TunnelInstance holds the state for a single managed tunnel.
 type TunnelInstance struct {
 	mu      sync.RWMutex
+	wg      sync.WaitGroup
 	ID      string
 	Config  *config.Config
 	AuthRes *auth.Result
@@ -33,6 +34,8 @@ const (
 
 // RunTunnel executes the auth + tunnel lifecycle with backoff reconnect.
 func RunTunnel(ctx context.Context, inst *TunnelInstance) {
+	defer inst.wg.Done()
+
 	inst.mu.Lock()
 	inst.Status = statusConnecting
 	inst.Since = time.Now()
